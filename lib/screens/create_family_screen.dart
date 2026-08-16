@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../utils/app_colors.dart';
 import 'home_screen.dart';
 
 class CreateFamilyScreen extends StatefulWidget {
@@ -41,7 +42,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F4F7),
+      backgroundColor: AppColors.lightGrey,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -52,43 +53,43 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 40),
-                  
+
                   // Back button
                   IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.arrow_back),
-                    color: const Color(0xFF0D1B2A),
+                    color: AppColors.primaryDarkBlue,
                   ),
                   const SizedBox(height: 20),
-                  
+
                   // Title
                   Text(
                     'Create Family',
                     style: GoogleFonts.playfairDisplay(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF0D1B2A),
+                      color: AppColors.primaryDarkBlue,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  
+
                   // Subtitle
                   Text(
                     'Create your family to start storing documents securely',
                     style: GoogleFonts.inter(
                       fontSize: 14,
-                      color: const Color(0xFF687280),
+                      color: AppColors.grey,
                     ),
                   ),
                   const SizedBox(height: 32),
-                  
+
                   // Family name input
                   Text(
                     'Family Name',
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF0D1B2A),
+                      color: AppColors.primaryDarkBlue,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -96,15 +97,18 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                     controller: _familyNameController,
                     decoration: InputDecoration(
                       hintText: 'Enter family name',
-                      hintStyle: TextStyle(color: Color(0xFF687280).withOpacity(0.5)),
-                      prefixIcon: const Icon(Icons.family_restroom, color: Color(0xFF687280)),
+                      hintStyle: TextStyle(
+                          color: AppColors.grey.withValues(alpha: 0.5)),
+                      prefixIcon: const Icon(Icons.family_restroom,
+                          color: AppColors.grey),
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -114,7 +118,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                     },
                   ),
                   const SizedBox(height: 32),
-                  
+
                   // Create button
                   SizedBox(
                     width: double.infinity,
@@ -122,7 +126,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                     child: ElevatedButton(
                       onPressed: _createFamily,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0D1B2A),
+                        backgroundColor: AppColors.primaryDarkBlue,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -135,9 +139,10 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                           color: Colors.white,
                         ),
                       ),
+                    ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Skip button
                   SizedBox(
                     width: double.infinity,
@@ -145,8 +150,8 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                     child: OutlinedButton(
                       onPressed: _skipFamily,
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF687280),
-                        side: const BorderSide(color: Color(0xFF687280)),
+                        foregroundColor: AppColors.grey,
+                        side: const BorderSide(color: AppColors.grey),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -156,7 +161,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF687280),
+                          color: AppColors.grey,
                         ),
                       ),
                     ),

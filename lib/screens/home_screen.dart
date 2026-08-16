@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../utils/app_colors.dart';
+import '../utils/app_constants.dart';
 import '../widgets/bottom_navigation.dart';
 import '../widgets/category_card.dart';
 
@@ -16,19 +18,19 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F4F7),
+      backgroundColor: AppColors.lightGrey,
       body: SafeArea(
         child: Column(
           children: [
             // Header
             _buildHeader(),
-            
+
             // Search Bar
             _buildSearchBar(),
-            
+
             // Welcome Message
             _buildWelcomeMessage(),
-            
+
             // Categories
             Expanded(
               child: _buildCategories(),
@@ -51,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
-        color: Color(0xFF0D1B2A),
+        color: AppColors.primaryDarkBlue,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -60,18 +62,18 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Kutumbika',
+                AppConstants.appName,
                 style: GoogleFonts.playfairDisplay(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFFD4AF37),
+                  color: AppColors.goldYellow,
                 ),
               ),
               Text(
                 'Secure Family Vault',
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  color: const Color(0xFF687280),
+                  color: AppColors.grey,
                 ),
               ),
             ],
@@ -80,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: const Color(0xFF1B3A6D),
+              color: AppColors.secondaryBlue,
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Icon(
@@ -99,15 +101,16 @@ class _HomeScreenState extends State<HomeScreen> {
       child: TextField(
         decoration: InputDecoration(
           hintText: 'Search documents, reminders...',
-          hintStyle: TextStyle(color: Color(0xFF687280)),
-          prefixIcon: const Icon(Icons.search, color: Color(0xFF687280)),
+          hintStyle: const TextStyle(color: AppColors.grey),
+          prefixIcon: const Icon(Icons.search, color: AppColors.grey),
           filled: true,
           fillColor: Colors.white,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
       ),
     );
@@ -121,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
         style: GoogleFonts.inter(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: const Color(0xFF0D1B2A),
+          color: AppColors.primaryDarkBlue,
         ),
       ),
     );
@@ -129,14 +132,38 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCategories() {
     final categories = [
-      {'name': 'Documents', 'icon': Icons.description, 'color': const Color(0xFF1B3A6D)},
-      {'name': 'Reminders', 'icon': Icons.alarm, 'color': const Color(0xFFD4AF37)},
-      {'name': 'Family', 'icon': Icons.people, 'color': const Color(0xFF0D1B2A)},
-      {'name': 'Passwords', 'icon': Icons.lock, 'color': const Color(0xFF1B3A6D)},
-      {'name': 'Medical', 'icon': Icons.local_hospital, 'color': const Color(0xFFD4AF37)},
-      {'name': 'Property', 'icon': Icons.home, 'color': const Color(0xFF0D1B2A)},
-      {'name': 'Vehicle', 'icon': Icons.directions_car, 'color': const Color(0xFF1B3A6D)},
-      {'name': 'More', 'icon': Icons.more_horiz, 'color': const Color(0xFF687280)},
+      {
+        'name': 'Documents',
+        'icon': Icons.description,
+        'color': AppColors.secondaryBlue
+      },
+      {'name': 'Reminders', 'icon': Icons.alarm, 'color': AppColors.goldYellow},
+      {
+        'name': 'Family',
+        'icon': Icons.people,
+        'color': AppColors.primaryDarkBlue
+      },
+      {
+        'name': 'Passwords',
+        'icon': Icons.lock,
+        'color': AppColors.secondaryBlue
+      },
+      {
+        'name': 'Medical',
+        'icon': Icons.local_hospital,
+        'color': AppColors.goldYellow
+      },
+      {
+        'name': 'Property',
+        'icon': Icons.home,
+        'color': AppColors.primaryDarkBlue
+      },
+      {
+        'name': 'Vehicle',
+        'icon': Icons.directions_car,
+        'color': AppColors.secondaryBlue
+      },
+      {'name': 'More', 'icon': Icons.more_horiz, 'color': AppColors.grey},
     ];
 
     return GridView.builder(

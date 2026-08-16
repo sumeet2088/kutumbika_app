@@ -1,10 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import '../utils/app_constants.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:8080'; // API Gateway URL
-  static const String appInitEndpoint = '/api/v1/app/init';
-  
   String? _visitorToken;
   String? _userToken;
   String? _visitorReferenceNumber;
@@ -16,31 +16,101 @@ class ApiService {
   String? get visitorReferenceNumber => _visitorReferenceNumber;
   String? get deviceReferenceNumber => _deviceReferenceNumber;
 
+  // Check if user is authenticated
+  bool get isAuthenticated => _userToken != null;
+
+  // Set tokens (useful for persistence)
+  void setTokens({
+    String? visitorToken,
+    String? userToken,
+    String? visitorReferenceNumber,
+    String? deviceReferenceNumber,
+  }) {
+    if (visitorToken != null) {
+      _visitorToken = visitorToken;
+    }
+    if (userToken != null) {
+      _userToken = userToken;
+    }
+    if (visitorReferenceNumber != null) {
+      _visitorReferenceNumber = visitorReferenceNumber;
+    }
+    if (deviceReferenceNumber != null) {
+      _deviceReferenceNumber = deviceReferenceNumber;
+    }
+  }
+
+  // Clear all tokens
+  void clearTokens() {
+    _visitorToken = null;
+    _userToken = null;
+    _visitorReferenceNumber = null;
+    _deviceReferenceNumber = null;
+  }
+
+  // Get platform information
+  Map<String, dynamic> _getPlatformInfo() {
+    if (kIsWeb) {
+      return {
+        'platform': 'web',
+        'os_name': 'Web',
+        'os_version': 'Browser',
+      };
+    } else {
+      if (Platform.isAndroid) {
+        return {
+          'platform': 'android',
+          'os_name': 'Android',
+          'os_version': 'Unknown',
+        };
+      } else {
+        if (Platform.isIOS) {
+          return {
+            'platform': 'ios',
+            'os_name': 'iOS',
+            'os_version': 'Unknown',
+          };
+        } else {
+          // Default fallback
+          return {
+            'platform': 'unknown',
+            'os_name': 'Unknown',
+            'os_version': 'Unknown',
+          };
+        }
+      }
+    }
+  }
+
   // Initialize app by calling /app/init endpoint
   Future<void> initializeApp() async {
     try {
+      final platformInfo = _getPlatformInfo();
+      final url = '${AppConstants.baseUrl}${AppConstants.appInitEndpoint}';
+      debugPrint('Initializing app at URL: $url');
+
       final response = await http.post(
-        Uri.parse('$baseUrl$appInitEndpoint'),
+        Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
           'X-Request-ID': _generateRequestId(),
         },
         body: jsonEncode({
-          'platform': 'android',
-          'app_version': '1.0.0',
-          'build_number': '1',
-          'locale': 'en-IN',
-          'timezone': 'Asia/Kolkata',
+          'platform': platformInfo['platform'],
+          'app_version': AppConstants.appVersion,
+          'build_number': AppConstants.buildNumber,
+          'locale': AppConstants.defaultLocale,
+          'timezone': AppConstants.defaultTimezone,
           'device': {
             'type': 'phone',
             'device_id': 'device-demo-001',
-            'manufacturer': 'Google',
-            'model': 'Pixel',
-            'os_name': 'Android',
-            'os_version': '14'
+            'manufacturer': 'Unknown',
+            'model': 'Unknown',
+            'os_name': platformInfo['os_name'],
+            'os_version': platformInfo['os_version']
           },
           'security': {
-            'type': 'play_integrity',
+            'type': kIsWeb ? 'web' : 'play_integrity',
             'request_hash': 'demo-hash',
             'integrity_token': 'demo-integrity-token'
           }
@@ -52,7 +122,7 @@ class ApiService {
         _visitorToken = responseData['token'];
         _visitorReferenceNumber = responseData['visitor_reference_number'];
         _deviceReferenceNumber = responseData['device_reference_number'];
-        print('App initialized successfully');
+        debugPrint('App initialized successfully');
       } else {
         throw Exception('Failed to initialize app: ${response.statusCode}');
       }
@@ -65,7 +135,7 @@ class ApiService {
   Future<Map<String, dynamic>> sendOTP(String mobile) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/api/v1/auth/otp/send'),
+        Uri.parse('${AppConstants.baseUrl}${AppConstants.otpSendEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'X-Request-ID': _generateRequestId(),
@@ -88,7 +158,7 @@ class ApiService {
   Future<Map<String, dynamic>> verifyOTP(String mobile, String otp) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/api/v1/auth/otp/verify'),
+        Uri.parse('${AppConstants.baseUrl}${AppConstants.otpVerifyEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'X-Request-ID': _generateRequestId(),
@@ -113,7 +183,7 @@ class ApiService {
   Future<Map<String, dynamic>> getUserDetails() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/api/v1/user/details'),
+        Uri.parse('${AppConstants.baseUrl}${AppConstants.userDetailsEndpoint}'),
         headers: {
           'X-Request-ID': _generateRequestId(),
           'Authorization': 'Bearer $_userToken',
@@ -134,7 +204,7 @@ class ApiService {
   Future<Map<String, dynamic>> getDocuments() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/api/v1/documents'),
+        Uri.parse('${AppConstants.baseUrl}${AppConstants.documentsEndpoint}'),
         headers: {
           'X-Request-ID': _generateRequestId(),
           'Authorization': 'Bearer $_userToken',
@@ -148,6 +218,29 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Error getting documents: $e');
+    }
+  }
+
+  // Logout
+  Future<Map<String, dynamic>> logout() async {
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConstants.baseUrl}${AppConstants.logoutEndpoint}'),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-ID': _generateRequestId(),
+          'Authorization': 'Bearer $_userToken',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        _userToken = null;
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to logout: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error during logout: $e');
     }
   }
 

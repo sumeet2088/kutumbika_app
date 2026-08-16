@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/app_colors.dart';
 
 class BottomNavigation extends StatelessWidget {
   final int currentIndex;
@@ -28,8 +29,8 @@ class BottomNavigation extends StatelessWidget {
         onTap: onTap,
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
-        selectedItemColor: const Color(0xFF0D1B2A),
-        unselectedItemColor: const Color(0xFF687280),
+        selectedItemColor: AppColors.primaryDarkBlue,
+        unselectedItemColor: AppColors.grey,
         selectedFontSize: 12,
         unselectedFontSize: 12,
         items: const [

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kutumbika_app/utils/app_colors.dart';
+import 'package:kutumbika_app/utils/app_constants.dart';
+import 'package:kutumbika_app/utils/error_handler.dart';
 import 'otp_verification_screen.dart';
 import '../services/api_service.dart';
 
@@ -34,7 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       try {
         await _apiService.sendOTP(_mobileController.text);
-        
+
         if (mounted) {
           Navigator.push(
             context,
@@ -47,9 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to send OTP: $e')),
-          );
+          ErrorHandler.showError(context, ErrorHandler.getErrorMessage(e));
         }
       } finally {
         if (mounted) {
@@ -75,60 +75,60 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 40),
-                  
+
                   // Logo
                   Center(
                     child: Container(
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFD4AF37),
+                        color: AppColors.goldYellow,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Icon(
                         Icons.security,
                         size: 40,
-                        color: Color(0xFF0D1B2A),
+                        color: AppColors.primaryDarkBlue,
                       ),
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // App name
                   Center(
                     child: Text(
-                      'Kutumbika',
+                      AppConstants.appName,
                       style: GoogleFonts.playfairDisplay(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF0D1B2A),
+                        color: AppColors.primaryDarkBlue,
                       ),
                     ),
                   ),
                   const SizedBox(height: 8),
-                  
+
                   Center(
                     child: Text(
-                      'Everything Your Family Needs.',
+                      AppConstants.appTagline,
                       style: GoogleFonts.inter(
                         fontSize: 14,
-                        color: const Color(0xFF687280),
+                        color: AppColors.grey,
                       ),
                     ),
                   ),
                   const SizedBox(height: 40),
-                  
+
                   // Login options
                   Text(
                     'Login with',
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF0D1B2A),
+                      color: AppColors.primaryDarkBlue,
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Social login buttons
                   Row(
                     children: [
@@ -150,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Divider
                   Row(
                     children: [
@@ -161,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           'OR',
                           style: GoogleFonts.inter(
                             fontSize: 12,
-                            color: const Color(0xFF687280),
+                            color: AppColors.grey,
                           ),
                         ),
                       ),
@@ -169,14 +169,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Mobile number input
                   Text(
                     'Mobile Number',
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF0D1B2A),
+                      color: AppColors.primaryDarkBlue,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -185,39 +185,43 @@ class _LoginScreenState extends State<LoginScreen> {
                     keyboardType: TextInputType.phone,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(10),
+                      LengthLimitingTextInputFormatter(
+                          AppConstants.mobileNumberLength),
                     ],
                     decoration: InputDecoration(
                       hintText: '+91 XXXXX XXXXX',
-                      hintStyle: TextStyle(color: Color(0xFF687280).withOpacity(0.5)),
-                      prefixIcon: const Icon(Icons.phone, color: Color(0xFF687280)),
+                      hintStyle: TextStyle(
+                          color: AppColors.grey.withValues(alpha: 0.5)),
+                      prefixIcon:
+                          const Icon(Icons.phone, color: AppColors.grey),
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter mobile number';
                       }
-                      if (value.length != 10) {
-                        return 'Please enter valid 10-digit mobile number';
+                      if (value.length != AppConstants.mobileNumberLength) {
+                        return 'Please enter valid ${AppConstants.mobileNumberLength}-digit mobile number';
                       }
                       return null;
                     },
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Password input
                   Text(
                     'Password',
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF0D1B2A),
+                      color: AppColors.primaryDarkBlue,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -226,20 +230,23 @@ class _LoginScreenState extends State<LoginScreen> {
                     obscureText: true,
                     decoration: InputDecoration(
                       hintText: 'Enter password',
-                      hintStyle: TextStyle(color: Color(0xFF687280).withOpacity(0.5)),
-                      prefixIcon: const Icon(Icons.lock, color: Color(0xFF687280)),
-                      suffixIcon: const Icon(Icons.visibility_off, color: Color(0xFF687280)),
+                      hintStyle: TextStyle(
+                          color: AppColors.grey.withValues(alpha: 0.5)),
+                      prefixIcon: const Icon(Icons.lock, color: AppColors.grey),
+                      suffixIcon: const Icon(Icons.visibility_off,
+                          color: AppColors.grey),
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                     ),
                   ),
                   const SizedBox(height: 8),
-                  
+
                   // Forgot password
                   Align(
                     alignment: Alignment.centerRight,
@@ -251,13 +258,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         'Forgot Password?',
                         style: GoogleFonts.inter(
                           fontSize: 12,
-                          color: const Color(0xFF1B3A6D),
+                          color: AppColors.secondaryBlue,
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Login button
                   SizedBox(
                     width: double.infinity,
@@ -265,14 +272,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _sendOTP,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0D1B2A),
+                        backgroundColor: AppColors.primaryDarkBlue,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: _isLoading
                           ? const CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             )
                           : Text(
                               'Send OTP',
@@ -285,7 +293,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Sign up link
                   Center(
                     child: TextButton(
@@ -296,7 +304,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         "Don't have an account? Sign Up",
                         style: GoogleFonts.inter(
                           fontSize: 14,
-                          color: const Color(0xFF1B3A6D),
+                          color: AppColors.secondaryBlue,
                         ),
                       ),
                     ),
@@ -318,7 +326,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Container(
       height: 50,
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFF687280).withOpacity(0.3)),
+        border: Border.all(color: AppColors.grey.withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -331,7 +339,7 @@ class _LoginScreenState extends State<LoginScreen> {
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF0D1B2A),
+              color: AppColors.primaryDarkBlue,
             ),
           ),
         ],
