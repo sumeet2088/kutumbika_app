@@ -87,9 +87,7 @@ class ApiService {
     try {
       final platformInfo = _getPlatformInfo();
       final url = '${AppConstants.baseUrl}${AppConstants.appInitEndpoint}';
-      debugPrint('Initializing app at URL: $url');
-
-      final response = await http.post(
+      final response = await _post(
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
@@ -134,7 +132,7 @@ class ApiService {
   // Send OTP
   Future<Map<String, dynamic>> sendOTP(String mobile) async {
     try {
-      final response = await http.post(
+      final response = await _post(
         Uri.parse('${AppConstants.baseUrl}${AppConstants.otpSendEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
@@ -157,7 +155,7 @@ class ApiService {
   // Verify OTP
   Future<Map<String, dynamic>> verifyOTP(String mobile, String otp) async {
     try {
-      final response = await http.post(
+      final response = await _post(
         Uri.parse('${AppConstants.baseUrl}${AppConstants.otpVerifyEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
@@ -182,7 +180,7 @@ class ApiService {
   // Get user details
   Future<Map<String, dynamic>> getUserDetails() async {
     try {
-      final response = await http.get(
+      final response = await _get(
         Uri.parse('${AppConstants.baseUrl}${AppConstants.userDetailsEndpoint}'),
         headers: {
           'X-Request-ID': _generateRequestId(),
@@ -203,7 +201,7 @@ class ApiService {
   // Get documents list
   Future<Map<String, dynamic>> getDocuments() async {
     try {
-      final response = await http.get(
+      final response = await _get(
         Uri.parse('${AppConstants.baseUrl}${AppConstants.documentsEndpoint}'),
         headers: {
           'X-Request-ID': _generateRequestId(),
@@ -224,7 +222,7 @@ class ApiService {
   // Logout
   Future<Map<String, dynamic>> logout() async {
     try {
-      final response = await http.post(
+      final response = await _post(
         Uri.parse('${AppConstants.baseUrl}${AppConstants.logoutEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
@@ -247,5 +245,131 @@ class ApiService {
   // Generate unique request ID
   String _generateRequestId() {
     return 'req_${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecond}';
+  }
+
+  Future<http.Response> _get(
+    Uri url, {
+    Map<String, String>? headers,
+  }) {
+    return _send(
+      method: 'GET',
+      url: url,
+      headers: headers,
+      request: () => http.get(url, headers: headers),
+    );
+  }
+
+  Future<http.Response> _post(
+    Uri url, {
+    Map<String, String>? headers,
+    Object? body,
+  }) {
+    return _send(
+      method: 'POST',
+      url: url,
+      headers: headers,
+      body: body,
+      request: () => http.post(url, headers: headers, body: body),
+    );
+  }
+
+  Future<http.Response> _send({
+    required String method,
+    required Uri url,
+    required Future<http.Response> Function() request,
+    Map<String, String>? headers,
+    Object? body,
+  }) async {
+    final stopwatch = Stopwatch()..start();
+    _logRequest(method: method, url: url, headers: headers, body: body);
+
+    try {
+      final response = await request();
+      stopwatch.stop();
+      _logResponse(
+        method: method,
+        url: url,
+        response: response,
+        elapsed: stopwatch.elapsed,
+      );
+      return response;
+    } catch (error, stackTrace) {
+      stopwatch.stop();
+      if (kDebugMode) {
+        debugPrint('[API] $method $url failed in ${stopwatch.elapsedMilliseconds}ms: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
+      rethrow;
+    }
+  }
+
+  void _logRequest({
+    required String method,
+    required Uri url,
+    Map<String, String>? headers,
+    Object? body,
+  }) {
+    if (!kDebugMode) return;
+
+    debugPrint('[API REQUEST] $method $url');
+    debugPrint('[API REQUEST] Headers: ${_sanitizeHeaders(headers)}');
+    if (body != null) {
+      debugPrint('[API REQUEST] Body: ${_sanitizeBody(body)}');
+    }
+  }
+
+  void _logResponse({
+    required String method,
+    required Uri url,
+    required http.Response response,
+    required Duration elapsed,
+  }) {
+    if (!kDebugMode) return;
+
+    debugPrint('[API RESPONSE] $method $url (${elapsed.inMilliseconds}ms)');
+    debugPrint('[API RESPONSE] Status: ${response.statusCode}');
+    debugPrint('[API RESPONSE] Headers: ${_sanitizeHeaders(response.headers)}');
+    debugPrint('[API RESPONSE] Body: ${_sanitizeBody(response.body)}');
+  }
+
+  Map<String, String> _sanitizeHeaders(Map<String, String>? headers) {
+    if (headers == null) return {};
+
+    return headers.map((key, value) => MapEntry(
+          key,
+          key.toLowerCase() == 'authorization' ? 'Bearer ***' : value,
+        ));
+  }
+
+  String _sanitizeBody(Object body) {
+    try {
+      final decoded = body is String ? jsonDecode(body) : body;
+      return jsonEncode(_redactSensitiveValues(decoded));
+    } on FormatException {
+      return body.toString();
+    }
+  }
+
+  dynamic _redactSensitiveValues(dynamic value) {
+    const sensitiveKeys = {
+      'token',
+      'otp',
+      'mobile',
+      'integrity_token',
+      'request_hash',
+    };
+
+    if (value is Map) {
+      return value.map((key, nestedValue) => MapEntry(
+            key,
+            sensitiveKeys.contains(key.toString().toLowerCase())
+                ? '***'
+                : _redactSensitiveValues(nestedValue),
+          ));
+    }
+    if (value is List) {
+      return value.map(_redactSensitiveValues).toList();
+    }
+    return value;
   }
 }
