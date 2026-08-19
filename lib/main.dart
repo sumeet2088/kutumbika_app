@@ -35,10 +35,10 @@ class KutumbikaApp extends StatelessWidget {
           primary: AppColors.primaryDarkBlue,
           secondary: AppColors.secondaryBlue,
           tertiary: AppColors.goldYellow,
-          surface: AppColors.lightGrey,
+          surface: AppColors.white,
           error: AppColors.error,
         ),
-        scaffoldBackgroundColor: AppColors.lightGrey,
+        scaffoldBackgroundColor: AppColors.white,
         textTheme: GoogleFonts.interTextTheme(
           Theme.of(context).textTheme,
         ),

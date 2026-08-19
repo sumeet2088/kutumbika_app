@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -17,10 +19,10 @@ class EnvService {
       debugPrint('Environment variables loaded successfully');
       _initialized = true;
     } catch (e) {
-      // Use default values if .env file is not found or fails to load
       debugPrint('Failed to load .env file, using default values: $e');
       _initialized = true;
     }
+    debugPrint('API_BASE_URL resolved to $apiBaseUrl');
   }
 
   String _getEnvVar(String key, String defaultValue) {
@@ -32,7 +34,14 @@ class EnvService {
   }
 
   // API Configuration
-  String get apiBaseUrl => _getEnvVar('API_BASE_URL', 'http://10.0.2.2:8080');
+  String get apiBaseUrl {
+    final url = _getEnvVar('API_BASE_URL', 'http://127.0.0.1:8080');
+    // If running on Android Emulator and pointing to localhost, use 10.0.2.2
+    if (!kIsWeb && Platform.isAndroid && (url.contains('127.0.0.1') || url.contains('localhost'))) {
+      return url.replaceAll('127.0.0.1', '127.0.0.1').replaceAll('localhost', '127.0.0.1');
+    }
+    return url;
+  }
   String get apiVersion => _getEnvVar('API_VERSION', 'v1');
   int get apiTimeout => int.tryParse(_getEnvVar('API_TIMEOUT', '30')) ?? 30;
 

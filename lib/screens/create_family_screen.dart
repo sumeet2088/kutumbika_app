@@ -1,176 +1,139 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../services/api_service.dart';
 import '../utils/app_colors.dart';
-import 'home_screen.dart';
+import '../utils/error_handler.dart';
+import '../utils/ui.dart';
+import 'main_shell.dart';
 
 class CreateFamilyScreen extends StatefulWidget {
-  const CreateFamilyScreen({super.key});
+  const CreateFamilyScreen({super.key, this.asOnboarding = true});
+
+  final bool asOnboarding;
 
   @override
   State<CreateFamilyScreen> createState() => _CreateFamilyScreenState();
 }
 
 class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
-  final _familyNameController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  final _name = TextEditingController();
+  final _api = ApiService.instance;
+  File? _photo;
+  bool _loading = false;
 
   @override
   void dispose() {
-    _familyNameController.dispose();
+    _name.dispose();
     super.dispose();
   }
 
-  void _createFamily() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: Call API to create family
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-        (route) => false,
-      );
+  Future<void> _pick() async {
+    final picked =
+        await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
+    if (picked != null) setState(() => _photo = File(picked.path));
+  }
+
+  Future<void> _create() async {
+    if (_name.text.trim().isEmpty) {
+      ErrorHandler.showError(context, 'Enter a family name');
+      return;
+    }
+    setState(() => _loading = true);
+    try {
+      await _api.createFamily(familyName: _name.text.trim(), photo: _photo);
+      if (!mounted) return;
+      if (widget.asOnboarding) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const MainShell()),
+          (route) => false,
+        );
+      } else {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ErrorHandler.showError(context, ErrorHandler.getErrorMessage(e));
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
-  void _skipFamily() {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const HomeScreen()),
-      (route) => false,
-    );
+  void _skip() {
+    if (widget.asOnboarding) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const MainShell()),
+        (route) => false,
+      );
+    } else {
+      Navigator.pop(context);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightGrey,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 40),
-
-                  // Back button
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back),
-                    color: AppColors.primaryDarkBlue,
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Title
-                  Text(
-                    'Create Family',
-                    style: GoogleFonts.playfairDisplay(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryDarkBlue,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Subtitle
-                  Text(
-                    'Create your family to start storing documents securely',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: AppColors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Family name input
-                  Text(
-                    'Family Name',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.primaryDarkBlue,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _familyNameController,
-                    decoration: InputDecoration(
-                      hintText: 'Enter family name',
-                      hintStyle: TextStyle(
-                          color: AppColors.grey.withValues(alpha: 0.5)),
-                      prefixIcon: const Icon(Icons.family_restroom,
-                          color: AppColors.grey),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter family name';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Create button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: _createFamily,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryDarkBlue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        'Create Family',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Skip button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: OutlinedButton(
-                      onPressed: _skipFamily,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.grey,
-                        side: const BorderSide(color: AppColors.grey),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        'Skip for Now',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.grey,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+      backgroundColor: AppColors.white,
+      appBar: AppBar(
+        backgroundColor: AppColors.white,
+        elevation: 0,
+        foregroundColor: AppColors.primaryDarkBlue,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Text(
+            'Create Family',
+            style: GoogleFonts.playfairDisplay(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryDarkBlue,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'A family is required to store and share documents.',
+            style: GoogleFonts.inter(color: AppColors.grey),
+          ),
+          const SizedBox(height: 24),
+          Center(
+            child: GestureDetector(
+              onTap: _pick,
+              child: CircleAvatar(
+                radius: 40,
+                backgroundColor: AppColors.secondaryBlue,
+                backgroundImage: _photo == null ? null : FileImage(_photo!),
+                child: _photo == null
+                    ? const Icon(Icons.camera_alt, color: Colors.white)
+                    : null,
               ),
             ),
           ),
-        ),
+          const SizedBox(height: 24),
+          AppTextField(
+            controller: _name,
+            label: 'Family name',
+            hint: 'Singh Family',
+            prefix: Icons.family_restroom,
+          ),
+          const SizedBox(height: 32),
+          PrimaryButton(
+            label: 'Create Family',
+            loading: _loading,
+            onPressed: _create,
+          ),
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: _skip,
+            child: const Text('Skip for now'),
+          ),
+        ],
       ),
     );
   }

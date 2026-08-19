@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:kutumbika_app/utils/app_colors.dart';
-import 'package:kutumbika_app/utils/app_constants.dart';
-import 'package:kutumbika_app/utils/error_handler.dart';
+import 'package:flutter/services.dart';
+
 import '../services/api_service.dart';
+import '../utils/app_colors.dart';
+import '../utils/error_handler.dart';
+import '../widgets/app_logo.dart';
 import 'login_screen.dart';
+import 'main_shell.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,83 +16,85 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  final ApiService _apiService = ApiService();
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _initializeApp();
+    _bootstrap();
   }
 
-  Future<void> _initializeApp() async {
+  Future<void> _bootstrap() async {
+    final api = ApiService.instance;
     try {
-      // Call the /app endpoint to initialize the app
-      await _apiService.initializeApp();
-
-      // Navigate to login screen after successful initialization
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
+      await api.session.load();
+      if (api.session.hasUser) {
+        try {
+          await api.getUserDetails();
+          if (!mounted) return;
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const MainShell()),
+          );
+          return;
+        } catch (_) {
+          await api.session.clearUser();
+        }
       }
+      await api.initializeApp();
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
     } catch (e) {
-      // Handle error - you might want to show an error screen
-      if (mounted) {
-        ErrorHandler.showError(context, ErrorHandler.getErrorMessage(e));
-      }
+      if (!mounted) return;
+      setState(() => _error = ErrorHandler.getErrorMessage(e));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primaryDarkBlue,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Logo placeholder - replace with actual logo
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: AppColors.goldYellow,
-                borderRadius: BorderRadius.circular(20),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light.copyWith(
+        statusBarColor: AppColors.logoBlack,
+        systemNavigationBarColor: AppColors.logoBlack,
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.logoBlack,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: AppLogo(width: MediaQuery.sizeOf(context).width * 0.72),
               ),
-              child: const Icon(
-                Icons.security,
-                size: 60,
-                color: AppColors.primaryDarkBlue,
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // App name
-            Text(
-              AppConstants.appName,
-              style: GoogleFonts.playfairDisplay(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: AppColors.goldYellow,
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // Tagline
-            Text(
-              AppConstants.appTagline,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: AppColors.grey,
-              ),
-            ),
-            const SizedBox(height: 48),
-
-            // Loading indicator
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.goldYellow),
-            ),
-          ],
+              const SizedBox(height: 40),
+              if (_error == null)
+                const CircularProgressIndicator(
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(AppColors.goldYellow),
+                )
+              else ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Text(
+                    _error!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () {
+                    setState(() => _error = null);
+                    _bootstrap();
+                  },
+                  child: const Text('Retry',
+                      style: TextStyle(color: AppColors.goldYellow)),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

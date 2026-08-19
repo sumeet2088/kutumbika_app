@@ -1,20 +1,19 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../services/api_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/app_constants.dart';
 import '../utils/error_handler.dart';
-import 'home_screen.dart';
-import '../services/api_service.dart';
+import '../utils/ui.dart';
 
 class OTPVerificationScreen extends StatefulWidget {
-  final String mobile;
+  const OTPVerificationScreen({super.key, required this.mobile});
 
-  const OTPVerificationScreen({
-    super.key,
-    required this.mobile,
-  });
+  final String mobile;
 
   @override
   State<OTPVerificationScreen> createState() => _OTPVerificationScreenState();
@@ -22,8 +21,8 @@ class OTPVerificationScreen extends StatefulWidget {
 
 class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
   final _otpController = TextEditingController();
-  final _apiService = ApiService();
-  bool _isLoading = false;
+  final _api = ApiService.instance;
+  bool _loading = false;
   bool _canResend = false;
   int _resendTimer = AppConstants.otpResendTimer;
   Timer? _timer;
@@ -31,75 +30,55 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
   @override
   void initState() {
     super.initState();
-    _startResendTimer();
+    _startTimer();
   }
 
-  void _startResendTimer() {
+  void _startTimer() {
     _timer?.cancel();
     setState(() {
       _canResend = false;
       _resendTimer = AppConstants.otpResendTimer;
     });
-
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {
-          _resendTimer--;
-        });
-        if (_resendTimer <= 0) {
-          timer.cancel();
-          setState(() {
-            _canResend = true;
-          });
-        }
+      if (!mounted) return;
+      setState(() => _resendTimer--);
+      if (_resendTimer <= 0) {
+        timer.cancel();
+        setState(() => _canResend = true);
       }
     });
   }
 
-  Future<void> _verifyOTP() async {
+  Future<void> _verify() async {
     if (_otpController.text.length != AppConstants.otpLength) {
       ErrorHandler.showError(
-          context, 'Please enter ${AppConstants.otpLength}-digit OTP');
+          context, 'Enter the ${AppConstants.otpLength}-digit OTP');
       return;
     }
-
-    setState(() {
-      _isLoading = true;
-    });
-
+    setState(() => _loading = true);
     try {
-      await _apiService.verifyOTP(widget.mobile, _otpController.text);
-
-      if (mounted) {
-        ErrorHandler.showSuccess(context, 'OTP verified successfully');
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-          (route) => false,
-        );
-      }
+      final result = await _api.verifyOTP(
+        otp: _otpController.text,
+        mobile: widget.mobile,
+      );
+      if (!mounted) return;
+      await goAfterLogin(context, result);
     } catch (e) {
       if (mounted) {
         ErrorHandler.showError(context, ErrorHandler.getErrorMessage(e));
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _loading = false);
     }
   }
 
-  Future<void> _resendOTP() async {
+  Future<void> _resend() async {
     if (!_canResend) return;
-
     try {
-      await _apiService.sendOTP(widget.mobile);
-      _startResendTimer();
-
+      await _api.sendOTP(mobile: widget.mobile);
+      _startTimer();
       if (mounted) {
-        ErrorHandler.showSuccess(context, 'OTP resent successfully');
+        ErrorHandler.showSuccess(context, 'OTP resent');
       }
     } catch (e) {
       if (mounted) {
@@ -118,130 +97,67 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightGrey,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 40),
-
-                // Back button
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back),
-                  color: AppColors.primaryDarkBlue,
-                ),
-                const SizedBox(height: 20),
-
-                // Title
-                Text(
-                  'Verify OTP',
-                  style: GoogleFonts.playfairDisplay(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryDarkBlue,
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                // Subtitle
-                Text(
-                  'Enter the 6-digit OTP sent to ${widget.mobile}',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: AppColors.grey,
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // OTP input field
-                TextField(
-                  controller: _otpController,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(AppConstants.otpLength),
-                  ],
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryDarkBlue,
-                    letterSpacing: 8,
-                  ),
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // Verify button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _verifyOTP,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryDarkBlue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator(
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          )
-                        : Text(
-                            'Verify',
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Resend OTP
-                Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Didn't receive OTP? ",
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: AppColors.grey,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: _canResend ? _resendOTP : null,
-                        child: Text(
-                          _canResend ? 'Resend' : 'Resend in $_resendTimer sec',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: AppColors.secondaryBlue,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+      backgroundColor: AppColors.white,
+      appBar: AppBar(
+        backgroundColor: AppColors.white,
+        elevation: 0,
+        foregroundColor: AppColors.primaryDarkBlue,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Verify OTP',
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryDarkBlue,
+              ),
             ),
-          ),
+            const SizedBox(height: 8),
+            Text(
+              'Enter the OTP sent to ${widget.mobile}',
+              style: GoogleFonts.inter(color: AppColors.grey),
+            ),
+            const SizedBox(height: 32),
+            TextField(
+              controller: _otpController,
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(AppConstants.otpLength),
+              ],
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 8,
+                color: AppColors.primaryDarkBlue,
+              ),
+              decoration: fieldDecoration(),
+            ),
+            const SizedBox(height: 32),
+            PrimaryButton(
+              label: 'Verify',
+              loading: _loading,
+              onPressed: _verify,
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: TextButton(
+                onPressed: _canResend ? _resend : null,
+                child: Text(
+                  _canResend ? 'Resend OTP' : 'Resend in $_resendTimer sec',
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.secondaryBlue,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

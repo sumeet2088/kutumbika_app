@@ -1,6 +1,5 @@
 plugins {
     id "com.android.application"
-    id "org.jetbrains.kotlin.android"
     id "dev.flutter.flutter-gradle-plugin"
 }
 
@@ -16,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.kutumbika_app"
-        minSdkVersion flutter.minSdkVersion
+        minSdk flutter.minSdkVersion
         targetSdk 37
         versionCode flutter.versionCode
         versionName flutter.versionName
