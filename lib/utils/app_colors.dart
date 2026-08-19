@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Primary colors from logo
-  static const Color logoBlack = Color(0xFF000000);
+  static const Color logoBlack = Color(0xFFFFFFFF);
   static const Color primaryDarkBlue = Color(0xFF0D1B2A);
   static const Color secondaryBlue = Color(0xFF1B3A6D);
   static const Color goldYellow = Color(0xFFE8C547);

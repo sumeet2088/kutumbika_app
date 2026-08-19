@@ -97,7 +97,7 @@ class AppConstants {
 
   static String get dashboardEndpoint => '$apiPrefix/dashboard/';
 
-  static const String logoAsset = 'assets/logo/kutumbika_logo.png';
+  static const String logoAsset = 'assets/logo/kutumbika_logo.jpg';
   static String get appName => _env.appName;
   static const String appTagline =
       'Everything Your Family Needs. One Secure Place.';
