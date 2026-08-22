@@ -73,39 +73,77 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
+              padding: pagePadding(context, horizontal: 16, top: 8),
               children: [
                 SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
                   title: const Text('Email notifications'),
                   value: _email,
                   onChanged: (v) => setState(() => _email = v),
                 ),
                 SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
                   title: const Text('SMS notifications'),
                   value: _sms,
                   onChanged: (v) => setState(() => _sms = v),
                 ),
                 SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
                   title: const Text('Push notifications'),
                   value: _push,
                   onChanged: (v) => setState(() => _push = v),
                 ),
                 SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
                   title: const Text('Reminder digest'),
                   value: _digest,
                   onChanged: (v) => setState(() => _digest = v),
                 ),
-                ListTile(
-                  title: const Text('Language'),
-                  subtitle: Text(_language),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: _language,
+                  decoration: fieldDecoration(label: 'Language', prefix: Icons.translate_rounded),
+                  items: [
+                    for (final e in {
+                      'en': 'English',
+                      'hi': 'Hindi',
+                      'mr': 'Marathi',
+                      'ta': 'Tamil',
+                      'te': 'Telugu',
+                      'kn': 'Kannada',
+                      'bn': 'Bengali',
+                      'gu': 'Gujarati',
+                      if (_language.isNotEmpty &&
+                          !const {'en', 'hi', 'mr', 'ta', 'te', 'kn', 'bn', 'gu'}
+                              .contains(_language))
+                        _language: _language,
+                    }.entries)
+                      DropdownMenuItem(value: e.key, child: Text(e.value)),
+                  ],
+                  onChanged: (v) => setState(() => _language = v ?? 'en'),
                 ),
-                ListTile(
-                  title: const Text('Timezone'),
-                  subtitle: Text(_timezone),
+                const SizedBox(height: 14),
+                DropdownButtonFormField<String>(
+                  value: _timezone,
+                  decoration: fieldDecoration(label: 'Timezone', prefix: Icons.public_rounded),
+                  items: [
+                    for (final z in {
+                      'Asia/Kolkata',
+                      'Asia/Dubai',
+                      'Asia/Singapore',
+                      'America/New_York',
+                      'America/Los_Angeles',
+                      'Europe/London',
+                      'Australia/Sydney',
+                      'UTC',
+                      if (_timezone.isNotEmpty) _timezone,
+                    })
+                      DropdownMenuItem(value: z, child: Text(z)),
+                  ],
+                  onChanged: (v) => setState(() => _timezone = v ?? 'Asia/Kolkata'),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: PrimaryButton(label: 'Save', onPressed: _save),
-                ),
+                const SizedBox(height: 24),
+                PrimaryButton(label: 'Save', onPressed: _save),
               ],
             ),
     );

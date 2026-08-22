@@ -86,7 +86,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
-                padding: const EdgeInsets.all(20),
+                padding: pagePadding(context, horizontal: 20, top: 12),
                 children: [
                   AppCard(
                     color: AppColors.navy,
@@ -140,6 +140,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         _row('Documents', '${usage['document_count'] ?? 0} / ${plan['document_limit'] ?? 0}'),
                         _row('Family members', '${usage['family_member_count'] ?? 0} / ${plan['family_member_limit'] ?? 0}'),
                         _row('Devices', '${usage['device_count'] ?? 0} / ${plan['device_limit'] ?? 0}'),
+                        _row('AI questions', '${usage['ai_questions_used'] ?? 0} / ${plan['ai_question_limit'] ?? 5}'),
                         _row('Price', '${plan['currency'] ?? 'INR'} ${plan['price'] ?? '0'}'),
                       ],
                     ),
@@ -155,6 +156,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         _flag('Replace files', restrictions['can_replace_documents'] == true),
                         _flag('Invite members', restrictions['can_invite_members'] == true),
                         _flag('Add devices', restrictions['can_add_devices'] == true),
+                        _flag('Ask AI', restrictions['can_ask_ai'] == true),
+                        _flag('Image OCR', plan['ocr_enabled'] == true),
                       ],
                     ),
                   ),
@@ -272,7 +275,7 @@ class _PlansScreenState extends State<PlansScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
           : ListView.separated(
-              padding: const EdgeInsets.all(16),
+              padding: pagePadding(context, horizontal: 16, top: 12),
               itemCount: _plans.length,
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, i) {

@@ -185,7 +185,7 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: pagePadding(context, horizontal: 16, top: 12),
                 children: [
                   Center(
                     child: GestureDetector(

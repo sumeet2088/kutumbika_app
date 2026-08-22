@@ -91,6 +91,9 @@ class _SplashScreenState extends State<SplashScreen> {
                       const SizedBox(height: 16),
                       Text(
                         'Loading Your Family Secure Place...',
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: bodyStyle(color: AppColors.grey, size: 13),
                       ),
                     ],

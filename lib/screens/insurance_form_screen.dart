@@ -118,21 +118,21 @@ class _InsuranceFormScreenState extends State<InsuranceFormScreen> {
       backgroundColor: AppColors.cream,
       appBar: navyAppBar('Add Policy'),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: pagePadding(context),
         children: [
-          TextField(controller: _provider, decoration: fieldDecoration(hint: 'Insurance provider')),
-          const SizedBox(height: 12),
-          TextField(controller: _policyNumber, decoration: fieldDecoration(hint: 'Policy number')),
-          const SizedBox(height: 12),
-          TextField(controller: _start, decoration: fieldDecoration(hint: 'Start date YYYY-MM-DD')),
-          const SizedBox(height: 12),
-          TextField(controller: _expiry, decoration: fieldDecoration(hint: 'Expiry date YYYY-MM-DD')),
-          const SizedBox(height: 16),
+          AppTextField(controller: _provider, label: 'Insurance provider', prefix: Icons.apartment_rounded),
+          const SizedBox(height: 14),
+          AppTextField(controller: _policyNumber, label: 'Policy number', prefix: Icons.tag_rounded),
+          const SizedBox(height: 14),
+          AppDateField(label: 'Start date', controller: _start),
+          const SizedBox(height: 14),
+          AppDateField(label: 'Expiry date', controller: _expiry),
+          const SizedBox(height: 20),
           Text('Attach vehicle (optional)', style: bodyStyle(weight: FontWeight.w700)),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
             value: _vehicleRef,
-            decoration: fieldDecoration(hint: 'Vehicle'),
+            decoration: fieldDecoration(label: 'Vehicle', prefix: Icons.directions_car_rounded),
             items: [
               const DropdownMenuItem(value: null, child: Text('None')),
               ..._vehicles.map((v) {
@@ -145,21 +145,22 @@ class _InsuranceFormScreenState extends State<InsuranceFormScreen> {
             ],
             onChanged: (v) => setState(() => _vehicleRef = v),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Text('Policy document', style: bodyStyle(weight: FontWeight.w700)),
-          const SizedBox(height: 8),
-          Text('Upload a new file or attach one already in Documents. The PDF is stored only once.',
-              style: bodyStyle(size: 12, color: AppColors.grey)),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: _pick,
-            icon: const Icon(Icons.upload_file),
-            label: Text(_file == null ? 'Upload document' : _file!.path.split(RegExp(r'[\\/]')).last),
+          const SizedBox(height: 6),
+          Text(
+            'Upload a new file or attach one already in Documents. The PDF is stored only once.',
+            style: bodyStyle(size: 12, color: AppColors.grey),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+          OutlineActionButton(
+            label: _file == null ? 'Upload document' : _file!.path.split(RegExp(r'[\\/]')).last,
+            onPressed: _pick,
+          ),
+          const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             value: _documentRef,
-            decoration: fieldDecoration(hint: 'Or attach existing document'),
+            decoration: fieldDecoration(label: 'Or attach existing document', prefix: Icons.description_rounded),
             items: [
               const DropdownMenuItem(value: null, child: Text('None')),
               ..._documents.map((d) {
@@ -175,7 +176,7 @@ class _InsuranceFormScreenState extends State<InsuranceFormScreen> {
               _file = null;
             }),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           PrimaryButton(label: _loading ? 'Saving...' : 'Save policy', onPressed: _loading ? null : _save),
         ],
       ),

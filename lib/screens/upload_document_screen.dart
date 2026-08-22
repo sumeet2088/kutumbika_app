@@ -23,6 +23,8 @@ class _UploadDocumentScreenState extends State<UploadDocumentScreen> {
   String? _categoryRef;
   File? _file;
   bool _loading = false;
+  bool _authorized = false;
+  bool _allowAI = false;
 
   @override
   void initState() {
@@ -72,6 +74,10 @@ class _UploadDocumentScreenState extends State<UploadDocumentScreen> {
       ErrorHandler.showError(context, 'Pick a file and category');
       return;
     }
+    if (!_authorized) {
+      ErrorHandler.showError(context, 'Confirm you are authorised to upload this information');
+      return;
+    }
     setState(() => _loading = true);
     try {
       await ApiService.instance.uploadDocument(
@@ -82,6 +88,8 @@ class _UploadDocumentScreenState extends State<UploadDocumentScreen> {
         description: _description.text.trim().isEmpty
             ? null
             : _description.text.trim(),
+        allowAI: _allowAI,
+        authorizedFamilyData: _authorized,
       );
       if (!mounted) return;
       ErrorHandler.showSuccess(context, 'Document uploaded');
@@ -108,38 +116,59 @@ class _UploadDocumentScreenState extends State<UploadDocumentScreen> {
       backgroundColor: AppColors.cream,
       appBar: navyAppBar('Upload Document'),
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: pagePadding(context, horizontal: 24, top: 16),
         children: [
           PrimaryButton(
             label: _file == null ? 'Choose file' : _file!.path.split(RegExp(r'[\\/]')).last,
             onPressed: _pick,
           ),
           const SizedBox(height: 16),
-          AppTextField(controller: _title, label: 'Title'),
-          const SizedBox(height: 16),
-          AppTextField(controller: _description, label: 'Description'),
-          const SizedBox(height: 16),
-          const Text('Category'),
-          const SizedBox(height: 8),
-          InputDecorator(
-            decoration: fieldDecoration(label: 'Category'),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _categoryRef,
-                isExpanded: true,
-                items: [
-                  for (final c in _categories)
-                    DropdownMenuItem(
-                      value: '${(c as Map)['document_category_reference_number']}',
-                      child: Text('${c['document_name']}'),
-                    ),
-                ],
-                onChanged: (v) => setState(() => _categoryRef = v),
-              ),
-            ),
+          AppTextField(controller: _title, label: 'Title', prefix: Icons.title_rounded),
+          const SizedBox(height: 14),
+          AppTextField(
+            controller: _description,
+            label: 'Description',
+            prefix: Icons.notes_rounded,
+            minLines: 2,
+            maxLines: 4,
+          ),
+          const SizedBox(height: 14),
+          DropdownButtonFormField<String>(
+            value: _categoryRef,
+            decoration: fieldDecoration(label: 'Category', prefix: Icons.folder_rounded),
+            items: [
+              for (final c in _categories)
+                DropdownMenuItem(
+                  value: '${(c as Map)['document_category_reference_number']}',
+                  child: Text('${c['document_name']}'),
+                ),
+            ],
+            onChanged: (v) => setState(() => _categoryRef = v),
           ),
           const SizedBox(height: 24),
-          PrimaryButton(label: 'Upload', loading: _loading, onPressed: _upload),
+          Text('How this file is processed', style: bodyStyle(weight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          Text(
+            'Your document will be encrypted and stored in this family vault. We use it for organisation, search and reminders. Image OCR and AI question-answering run only if you allow AI processing.',
+            style: bodyStyle(size: 13, color: AppColors.navyDeep),
+          ),
+          CheckboxListTile(
+            value: _authorized,
+            onChanged: (v) => setState(() => _authorized = v == true),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+            title: const Text('I am authorised to upload and manage this information in Paarisetu'),
+          ),
+          CheckboxListTile(
+            value: _allowAI,
+            onChanged: (v) => setState(() => _allowAI = v == true),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Allow AI / OCR to process this document (optional)'),
+            subtitle: const Text('You can turn this off later in Privacy & Data'),
+          ),
+          const SizedBox(height: 16),
+          PrimaryButton(label: 'Continue upload', loading: _loading, onPressed: _upload),
         ],
       ),
     );

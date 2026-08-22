@@ -104,49 +104,44 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: pagePadding(context, horizontal: 24, top: 16),
         children: [
-          AppTextField(controller: _title, label: 'Title'),
-          const SizedBox(height: 16),
-          ListTile(
-            title: Text('Date ${DateFormat.yMMMd().format(_date)}'),
-            onTap: () async {
-              final picked = await showDatePicker(
-                context: context,
-                firstDate: DateTime.now(),
-                lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
-                initialDate: _date,
-              );
-              if (picked != null) setState(() => _date = picked);
-            },
+          AppTextField(controller: _title, label: 'Title', prefix: Icons.notifications_active_rounded),
+          const SizedBox(height: 14),
+          AppDateField(
+            label: 'Date',
+            value: _date,
+            firstDate: DateTime.now(),
+            lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+            onPicked: (picked) => setState(() => _date = picked),
           ),
-          ListTile(
-            title: Text('Time ${_time.format(context)}'),
-            onTap: () async {
-              final picked =
-                  await showTimePicker(context: context, initialTime: _time);
-              if (picked != null) setState(() => _time = picked);
-            },
+          const SizedBox(height: 14),
+          AppTimeField(
+            label: 'Time',
+            value: _time,
+            onPicked: (picked) => setState(() => _time = picked),
           ),
-          InputDecorator(
-            decoration: fieldDecoration(hint: 'Repeat'),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _repeat,
-                isExpanded: true,
-                items: const [
-                  DropdownMenuItem(value: 'NONE', child: Text('Does not repeat')),
-                  DropdownMenuItem(value: 'DAILY', child: Text('Daily')),
-                  DropdownMenuItem(value: 'WEEKLY', child: Text('Weekly')),
-                  DropdownMenuItem(value: 'MONTHLY', child: Text('Monthly')),
-                  DropdownMenuItem(value: 'YEARLY', child: Text('Yearly')),
-                ],
-                onChanged: (v) => setState(() => _repeat = v ?? 'NONE'),
-              ),
-            ),
+          const SizedBox(height: 14),
+          DropdownButtonFormField<String>(
+            value: _repeat,
+            decoration: fieldDecoration(label: 'Repeat', prefix: Icons.repeat_rounded),
+            items: const [
+              DropdownMenuItem(value: 'NONE', child: Text('Does not repeat')),
+              DropdownMenuItem(value: 'DAILY', child: Text('Daily')),
+              DropdownMenuItem(value: 'WEEKLY', child: Text('Weekly')),
+              DropdownMenuItem(value: 'MONTHLY', child: Text('Monthly')),
+              DropdownMenuItem(value: 'YEARLY', child: Text('Yearly')),
+            ],
+            onChanged: (v) => setState(() => _repeat = v ?? 'NONE'),
           ),
-          const SizedBox(height: 16),
-          AppTextField(controller: _notes, label: 'Notes'),
+          const SizedBox(height: 14),
+          AppTextField(
+            controller: _notes,
+            label: 'Notes',
+            prefix: Icons.notes_rounded,
+            minLines: 2,
+            maxLines: 4,
+          ),
           const SizedBox(height: 24),
           PrimaryButton(label: 'Save', loading: _loading, onPressed: _save),
         ],

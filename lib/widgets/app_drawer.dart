@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import '../screens/activity_screen.dart';
 import '../screens/family_screen.dart';
 import '../screens/reminders_screen.dart';
+import '../screens/privacy_settings_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/subscription_screen.dart';
 import '../screens/vault_screen.dart';
 import '../services/api_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/app_constants.dart';
+import '../utils/layout.dart';
 import '../utils/ui.dart';
 import 'app_logo.dart';
 
@@ -32,6 +34,7 @@ class AppDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = displayName(user);
     return Drawer(
+      width: AppLayout.of(context).drawerWidth,
       backgroundColor: AppColors.white,
       child: SafeArea(
         child: ListView(
@@ -64,13 +67,14 @@ class AppDrawer extends StatelessWidget {
               }),
               const Divider(),
             ],
-            _tile(context, Icons.home_outlined, 'Home', onHome),
-            _tile(context, Icons.folder_outlined, 'Documents', () => _open(context, const VaultScreen())),
-            _tile(context, Icons.people_outline, 'Family', () => _open(context, const FamilyScreen())),
-            _tile(context, Icons.alarm_outlined, 'Reminders', () => _open(context, const RemindersScreen())),
-            _tile(context, Icons.history, 'Activity', () => _open(context, const ActivityScreen())),
-            _tile(context, Icons.workspace_premium_outlined, 'Subscription', () => _open(context, const SubscriptionScreen())),
-            _tile(context, Icons.settings_outlined, 'Settings', () => _open(context, const SettingsScreen())),
+            _tile(context, Icons.home_rounded, AppColors.navy, 'Home', onHome),
+            _tile(context, Icons.folder_rounded, AppColors.sky, 'Documents', () => _open(context, const VaultScreen())),
+            _tile(context, Icons.groups_rounded, AppColors.emerald, 'Family', () => _open(context, const FamilyScreen())),
+            _tile(context, Icons.notifications_active_rounded, AppColors.orange, 'Reminders', () => _open(context, const RemindersScreen())),
+            _tile(context, Icons.history_rounded, AppColors.purple, 'Activity', () => _open(context, const ActivityScreen())),
+            _tile(context, Icons.workspace_premium_rounded, AppColors.goldSoft, 'Subscription', () => _open(context, const SubscriptionScreen())),
+            _tile(context, Icons.privacy_tip_rounded, AppColors.teal, 'Privacy & Data', () => _open(context, const PrivacySettingsScreen())),
+            _tile(context, Icons.settings_rounded, AppColors.navyDeep, 'Settings', () => _open(context, const SettingsScreen())),
           ],
         ),
       ),
@@ -82,11 +86,11 @@ class AppDrawer extends StatelessWidget {
     navigatorKey.currentState?.push(MaterialPageRoute(builder: (_) => page));
   }
 
-  Widget _tile(BuildContext context, IconData icon, String title, VoidCallback onTap) {
+  Widget _tile(BuildContext context, IconData icon, Color color, String title, VoidCallback onTap) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, color: AppColors.navy),
-      title: Text(title, style: bodyStyle(weight: FontWeight.w600)),
+      leading: AppIconBadge(icon: icon, color: color, size: 36, iconSize: 18),
+      title: Text(title, style: bodyStyle(weight: FontWeight.w700)),
       onTap: onTap,
     );
   }

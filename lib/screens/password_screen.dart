@@ -59,7 +59,7 @@ class _PasswordScreenState extends State<PasswordScreen> {
       backgroundColor: AppColors.cream,
       appBar: navyAppBar(widget.hasPassword ? 'Change password' : 'Create password'),
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: pagePadding(context, horizontal: 24, top: 16),
         children: [
           if (widget.hasPassword) ...[
             AppTextField(

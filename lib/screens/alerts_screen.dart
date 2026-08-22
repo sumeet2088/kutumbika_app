@@ -52,7 +52,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
         child: _loading
             ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
             : ListView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
+                padding: pagePadding(context, horizontal: 20, top: 8),
                 children: [
                   Row(
                     children: [

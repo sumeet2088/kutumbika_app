@@ -15,7 +15,7 @@ class MoreModulesScreen extends StatelessWidget {
       backgroundColor: AppColors.cream,
       appBar: navyAppBar('More'),
       body: ListView.separated(
-        padding: const EdgeInsets.all(16),
+        padding: pagePadding(context, horizontal: 16, top: 12),
         itemCount: modules.length,
         separatorBuilder: (_, __) => const SizedBox(height: 10),
         itemBuilder: (context, index) {
@@ -24,9 +24,9 @@ class MoreModulesScreen extends StatelessWidget {
           return AppCard(
             child: ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: CircleAvatar(
-                backgroundColor: AppColors.navy,
-                child: Icon(moduleIcon('${module['module_key']}'), color: AppColors.gold),
+              leading: AppIconBadge(
+                icon: moduleIcon('${module['module_key']}'),
+                color: moduleTint('${module['module_key']}'),
               ),
               title: Text('${module['title']}', style: bodyStyle(weight: FontWeight.w700)),
               subtitle: Text(

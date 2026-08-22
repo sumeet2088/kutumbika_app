@@ -11,6 +11,7 @@ import '../widgets/app_logo.dart';
 import '../widgets/phone_field.dart';
 import 'forgot_password_screen.dart';
 import 'otp_verification_screen.dart';
+import 'policy_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -28,6 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscure = true;
   bool _otpMode = false;
   bool _useEmail = false;
+  bool _acceptedLegal = false;
   DialCountry _country = defaultDialCountry;
 
   @override
@@ -73,6 +75,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
+    if (!_acceptedLegal) {
+      ErrorHandler.showError(context, 'Agree to Terms and acknowledge the Privacy Policy to continue');
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
     if (_otpMode) {
       await _run(() async {
@@ -109,6 +115,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _oauth(String provider) async {
+    if (!_acceptedLegal) {
+      ErrorHandler.showError(context, 'Agree to Terms and acknowledge the Privacy Policy to continue');
+      return;
+    }
     final identity = _identityController.text.trim();
     final subject = identity.isEmpty ? 'paarisetu-user' : identity;
     await _run(() async {
@@ -151,6 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: _identityController,
                         label: 'Email',
                         hint: 'you@example.com',
+                        prefix: Icons.alternate_email_rounded,
                         keyboardType: TextInputType.emailAddress,
                         validator: _identityError,
                       )
@@ -184,6 +195,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: _passwordController,
                         label: 'Password',
                         hint: 'Password',
+                        prefix: Icons.lock_rounded,
                         obscure: _obscure,
                         onToggleObscure: () => setState(() => _obscure = !_obscure),
                       ),
@@ -215,6 +227,28 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ] else
                       const SizedBox(height: 24),
+                    CheckboxListTile(
+                      value: _acceptedLegal,
+                      onChanged: (v) => setState(() => _acceptedLegal = v == true),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                      title: Wrap(
+                        children: [
+                          Text('I agree to the ', style: bodyStyle(size: 13)),
+                          GestureDetector(
+                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PolicyScreen(policyKey: 'terms'))),
+                            child: Text('Terms & Conditions', style: bodyStyle(size: 13, weight: FontWeight.w700, color: AppColors.navy)),
+                          ),
+                          Text(' and acknowledge the ', style: bodyStyle(size: 13)),
+                          GestureDetector(
+                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PolicyScreen(policyKey: 'privacy'))),
+                            child: Text('Privacy Policy', style: bodyStyle(size: 13, weight: FontWeight.w700, color: AppColors.navy)),
+                          ),
+                          Text('.', style: bodyStyle(size: 13)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     PrimaryButton(
                       label: _otpMode ? 'Send OTP' : 'Submit',
                       loading: _loading,

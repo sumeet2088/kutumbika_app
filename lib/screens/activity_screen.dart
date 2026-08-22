@@ -50,7 +50,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
           : _items.isEmpty
               ? const EmptyState(message: 'No activity yet')
               : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  padding: pagePadding(context, horizontal: 16, top: 8),
                   itemCount: _items.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, i) {

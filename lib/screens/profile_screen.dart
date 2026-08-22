@@ -1,4 +1,9 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 
 import '../services/api_service.dart';
 import '../utils/app_colors.dart';
@@ -22,6 +27,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? _user;
   Map<String, dynamic>? _sub;
+  Uint8List? _photo;
   bool _loading = true;
 
   @override
@@ -44,8 +50,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _sub = results[1];
         _loading = false;
       });
+      await _loadPhoto();
     } catch (e) {
       setState(() => _loading = false);
+      if (mounted) ErrorHandler.showError(context, ErrorHandler.getErrorMessage(e));
+    }
+  }
+
+  Future<void> _loadPhoto() async {
+    if (_user?['has_photo'] != true) {
+      if (mounted) setState(() => _photo = null);
+      return;
+    }
+    try {
+      final photo = await ApiService.instance.getUserPhoto();
+      if (mounted) setState(() => _photo = photo);
+    } catch (_) {
+      if (mounted) setState(() => _photo = null);
+    }
+  }
+
+  Future<void> _pickPhoto() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
+    if (picked == null) return;
+    try {
+      await ApiService.instance.uploadUserPhoto(File(picked.path));
+      if (!mounted) return;
+      ErrorHandler.showSuccess(context, 'Profile photo updated');
+      await _load();
+    } catch (e) {
       if (mounted) ErrorHandler.showError(context, ErrorHandler.getErrorMessage(e));
     }
   }
@@ -67,28 +100,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
           : ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+              padding: pagePadding(context, horizontal: 16, top: 16),
               children: [
                 Text('Profile', style: headingStyle(size: 22)),
                 const SizedBox(height: 16),
                 Center(
-                  child: CircleAvatar(
-                    radius: 40,
-                    backgroundColor: AppColors.navy,
-                    child: Text(
-                      name[0].toUpperCase(),
-                      style: const TextStyle(color: AppColors.gold, fontSize: 28),
+                  child: GestureDetector(
+                    onTap: _pickPhoto,
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        CircleAvatar(
+                          radius: 44,
+                          backgroundColor: AppColors.navy,
+                          backgroundImage: _avatarImage,
+                          child: _avatarImage != null
+                              ? null
+                              : Text(
+                                  name[0].toUpperCase(),
+                                  style: const TextStyle(color: AppColors.gold, fontSize: 28),
+                                ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                            color: AppColors.gold,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.photo_camera, size: 16, color: AppColors.navy),
+                        ),
+                      ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 10),
                 Center(child: Text(name == 'there' ? 'Paarisetu user' : name, style: headingStyle(size: 22))),
-                Center(
-                  child: Text(
-                    '${formatE164(_user?['mobile']?.toString())}  ${_user?['email'] ?? ''}',
-                    style: bodyStyle(color: AppColors.grey),
-                  ),
-                ),
                 const SizedBox(height: 16),
                 AppCard(
                   color: AppColors.navy,
@@ -105,6 +151,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     },
                   ),
                 ),
+                const SizedBox(height: 12),
+                _detailsCard(),
                 const SizedBox(height: 12),
                 _tile('Personal information', Icons.edit_outlined, () {
                   Navigator.push(
@@ -146,11 +194,97 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  ImageProvider? get _avatarImage {
+    if (_photo != null) return MemoryImage(_photo!);
+    final raw = '${_user?['profile_photo'] ?? ''}'.trim();
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      return NetworkImage(raw);
+    }
+    return null;
+  }
+
+  Widget _detailsCard() {
+    final user = _user ?? {};
+    final dob = DateTime.tryParse('${user['dob'] ?? ''}');
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Personal details', style: bodyStyle(weight: FontWeight.w700, size: 16)),
+          const SizedBox(height: 12),
+          _verifiedDetail(
+            'Mobile',
+            formatE164(user['mobile']?.toString()),
+            user['mobile_verified'] == true,
+          ),
+          _verifiedDetail(
+            'Email',
+            _orDash(user['email']),
+            user['email_verified'] == true,
+          ),
+          _detail('Date of birth', dob == null ? '—' : DateFormat.yMMMd().format(dob)),
+          _detail('Gender', _orDash(user['gender'])),
+          _detail('Country', _orDash(user['country'])),
+          _detail('State', _orDash(user['state'])),
+          _detail('City', _orDash(user['city'])),
+        ],
+      ),
+    );
+  }
+
+  Widget _detail(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(label, style: bodyStyle(size: 13, color: AppColors.grey)),
+          ),
+          Expanded(child: Text(value, style: bodyStyle(weight: FontWeight.w600))),
+        ],
+      ),
+    );
+  }
+
+  Widget _verifiedDetail(String label, String value, bool verified) {
+    final text = value.trim().isEmpty ? '—' : value;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(label, style: bodyStyle(size: 13, color: AppColors.grey)),
+          ),
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(child: Text(text, style: bodyStyle(weight: FontWeight.w600))),
+                if (verified)
+                  const Icon(Icons.verified_rounded, size: 18, color: AppColors.success),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _orDash(dynamic value, {String fallback = '—'}) {
+    final text = '$value'.trim();
+    if (text.isEmpty || text == 'null') return fallback;
+    return text;
+  }
+
   Widget _tile(String title, IconData icon, VoidCallback onTap) {
     return AppCard(
       child: ListTile(
         contentPadding: EdgeInsets.zero,
-        leading: Icon(icon, color: AppColors.navy),
+        leading: AppIconBadge(icon: icon, color: AppColors.navy, size: 36, iconSize: 18),
         title: Text(title, style: bodyStyle(weight: FontWeight.w600)),
         trailing: const Icon(Icons.chevron_right),
         onTap: onTap,

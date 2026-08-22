@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/error_handler.dart';
+import '../utils/layout.dart';
 import '../utils/ui.dart';
 
 class DeviceRegisterScreen extends StatefulWidget {
@@ -28,7 +29,7 @@ class _DeviceRegisterScreenState extends State<DeviceRegisterScreen> {
           challengeRef: widget.result.challengeReferenceNumber,
         );
       }
-      final result = await api.completeDeviceLogin(deviceName: 'Paarisetu Phone');
+      final result = await api.completeDeviceLogin(deviceName: AppLayout.deviceDisplayName());
       if (!mounted) return;
       await goAfterLogin(
         context,
@@ -70,7 +71,7 @@ class _DeviceRegisterScreenState extends State<DeviceRegisterScreen> {
               const SizedBox(height: 12),
               Text(
                 widget.result.message ??
-                    'New device detected. Bind this phone to finish login.',
+                    'New device detected. Bind this ${AppLayout.detectDeviceType()} to finish login.',
                 style: GoogleFonts.inter(color: AppColors.grey, height: 1.4),
               ),
               const Spacer(),

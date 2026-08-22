@@ -52,44 +52,52 @@ List<Map<String, dynamic>> defaultHomeModules() {
 IconData moduleIcon(String key) {
   switch (key) {
     case 'documents':
-      return Icons.folder_outlined;
+      return Icons.folder_rounded;
     case 'family_members':
-      return Icons.people_outline;
+      return Icons.groups_rounded;
     case 'secure_notes':
-      return Icons.sticky_note_2_outlined;
+      return Icons.lock_rounded;
     case 'digital_assets':
-      return Icons.image_outlined;
+      return Icons.photo_library_rounded;
     case 'insurance':
-      return Icons.health_and_safety_outlined;
+      return Icons.health_and_safety_rounded;
     case 'bank_accounts':
-      return Icons.account_balance_outlined;
+      return Icons.account_balance_rounded;
     case 'investments':
-      return Icons.trending_up;
+      return Icons.trending_up_rounded;
     case 'passwords':
-      return Icons.password;
+      return Icons.key_rounded;
     case 'vehicles':
-      return Icons.directions_car_outlined;
+      return Icons.directions_car_rounded;
     case 'properties':
-      return Icons.home_work_outlined;
+      return Icons.home_work_rounded;
     default:
-      return Icons.apps;
+      return Icons.apps_rounded;
   }
 }
 
 Color moduleTint(String key) {
   switch (key) {
     case 'documents':
-    case 'insurance':
       return AppColors.sky;
     case 'family_members':
-    case 'bank_accounts':
       return AppColors.emerald;
     case 'secure_notes':
+      return AppColors.navyDeep;
+    case 'digital_assets':
+      return AppColors.purple;
+    case 'insurance':
+      return AppColors.teal;
+    case 'bank_accounts':
+      return AppColors.goldSoft;
     case 'investments':
       return AppColors.orange;
-    case 'digital_assets':
     case 'passwords':
-      return AppColors.purple;
+      return AppColors.navy;
+    case 'vehicles':
+      return AppColors.sky;
+    case 'properties':
+      return AppColors.emerald;
     default:
       return AppColors.grey;
   }

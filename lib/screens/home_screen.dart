@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../services/api_service.dart';
 import '../utils/app_colors.dart';
+import '../utils/error_handler.dart';
+import '../utils/layout.dart';
 import '../utils/modules.dart';
 import '../utils/ui.dart';
 import 'activity_screen.dart';
@@ -89,7 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 96),
+      padding: pagePadding(context, horizontal: 20, top: 4),
       children: [
         Text(
           'Welcome back, $first! 👋',
@@ -160,44 +162,45 @@ class _HomeScreenState extends State<HomeScreen> {
           () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VaultScreen())),
         ),
         const SizedBox(height: 10),
-        AppCard(
-          padding: const EdgeInsets.fromLTRB(6, 16, 6, 14),
-          child: Row(
-            children: [
-              _vaultStat(Icons.description_outlined, AppColors.sky, '${summary['documents'] ?? d['documents_active'] ?? 0}', 'Documents', () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const VaultScreen()));
-              }),
-              _vaultStat(Icons.people_outline, AppColors.emerald, '${summary['family_members'] ?? d['family_member_count'] ?? 0}', 'Family Members', () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const FamilyScreen()));
-              }),
-              _vaultStat(Icons.verified_user_outlined, AppColors.orange, '${summary['secure_items'] ?? 0}', 'Secure Items', () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const VaultScreen()));
-              }),
-              _vaultStat(Icons.schedule, AppColors.purple, '${summary['pending_actions'] ?? 0}', 'Pending Actions', () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const RemindersScreen()));
-              }),
-            ],
-          ),
+        Row(
+          children: [
+            _vaultStat(Icons.description_rounded, AppColors.sky, '${summary['documents'] ?? d['documents_active'] ?? 0}', 'Docs', () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const VaultScreen()));
+            }),
+            const SizedBox(width: 8),
+            _vaultStat(Icons.groups_rounded, AppColors.emerald, '${summary['family_members'] ?? d['family_member_count'] ?? 0}', 'Members', () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const FamilyScreen()));
+            }),
+            const SizedBox(width: 8),
+            _vaultStat(Icons.verified_user_rounded, AppColors.orange, '${summary['secure_items'] ?? 0}', 'Secure', () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const VaultScreen()));
+            }),
+            const SizedBox(width: 8),
+            _vaultStat(Icons.schedule_rounded, AppColors.purple, '${summary['pending_actions'] ?? 0}', 'Pending', () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const RemindersScreen()));
+            }),
+          ],
         ),
         const SizedBox(height: 22),
         _sectionHeader(
           'Quick Access',
           'Customize',
           () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Home tiles follow your family plan. Custom order is coming next.')),
+            ErrorHandler.showInfo(
+              context,
+              'Home tiles follow your family plan. Custom order is coming next.',
             );
           },
           trailingIcon: Icons.tune,
         ),
         const SizedBox(height: 10),
         GridView.count(
-          crossAxisCount: 2,
+          crossAxisCount: AppLayout.of(context).quickColumns,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
-          childAspectRatio: 2.4,
+          childAspectRatio: AppLayout.of(context).quickAspectRatio,
           children: [
             ...visible.map((module) => _quickTile(
                   moduleIcon('${module['module_key']}'),
@@ -225,10 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
           AppCard(
             child: Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: AppColors.bannerBlue,
-                  child: Icon(Icons.history, color: AppColors.sky),
-                ),
+                const AppIconBadge(icon: Icons.history_rounded, color: AppColors.sky),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -250,10 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: AppCard(
                 child: ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: CircleAvatar(
-                    backgroundColor: color.withValues(alpha: 0.12),
-                    child: Icon(_activityIcon('${item['icon_key']}'), color: color),
-                  ),
+                  leading: AppIconBadge(icon: _activityIcon('${item['icon_key']}'), color: color),
                   title: Text('${item['title']}', style: bodyStyle(weight: FontWeight.w600)),
                   subtitle: Text(relativeTime(item['created_at']), style: bodyStyle(size: 12, color: AppColors.grey)),
                   trailing: const Icon(Icons.chevron_right, color: AppColors.grey),
@@ -345,26 +342,46 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _vaultStat(IconData icon, Color color, String value, String label, VoidCallback onTap) {
     return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(color: color.withValues(alpha: 0.14), shape: BoxShape.circle),
-              child: Icon(icon, color: color, size: 22),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Ink(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: color.withValues(alpha: 0.16)),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.22),
+                  blurRadius: 12,
+                  offset: const Offset(0, 5),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(value, style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.navy)),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(fontSize: 10, color: AppColors.grey, fontWeight: FontWeight.w500, height: 1.15),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.16), shape: BoxShape.circle),
+                  child: Icon(icon, color: color, size: 17),
+                ),
+                const SizedBox(height: 6),
+                Text(value, style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 16, color: color)),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(fontSize: 11, color: AppColors.navy, fontWeight: FontWeight.w700),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -377,7 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Opacity(
         opacity: enabled ? 1 : 0.5,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: BorderRadius.circular(16),
@@ -391,15 +408,15 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           child: Row(
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-                child: Icon(icon, color: color, size: 20),
-              ),
+              AppIconBadge(icon: icon, color: color, size: 34, iconSize: 18),
               const SizedBox(width: 10),
               Expanded(
-                child: Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.navy)),
+                child: Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.navy),
+                ),
               ),
             ],
           ),
@@ -431,11 +448,11 @@ class _HomeScreenState extends State<HomeScreen> {
   IconData _activityIcon(String key) {
     switch (key) {
       case 'people':
-        return Icons.people_outline;
+        return Icons.groups_rounded;
       case 'shield':
-        return Icons.health_and_safety_outlined;
+        return Icons.health_and_safety_rounded;
       default:
-        return Icons.description_outlined;
+        return Icons.description_rounded;
     }
   }
 }

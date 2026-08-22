@@ -174,6 +174,8 @@ class _WelcomePage extends StatelessWidget {
                         const SizedBox(height: 8),
                         Text(
                           item.label,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,
                           style: bodyStyle(size: 12, weight: FontWeight.w600),
                         ),

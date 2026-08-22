@@ -3,6 +3,8 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+import 'payload_crypto.dart';
+
 class EnvService {
   static EnvService? _instance;
   static EnvService get instance => _instance ??= EnvService._internal();
@@ -22,7 +24,9 @@ class EnvService {
       debugPrint('Failed to load .env file, using default values: $e');
       _initialized = true;
     }
+    PayloadCrypto.configure(payloadEncryptionKey);
     debugPrint('API_BASE_URL resolved to $apiBaseUrl');
+    debugPrint('Payload encryption ${PayloadCrypto.enabled ? 'enabled' : 'disabled'}');
   }
 
   String _getEnvVar(String key, String defaultValue) {
@@ -44,6 +48,7 @@ class EnvService {
   }
   String get apiVersion => _getEnvVar('API_VERSION', 'v1');
   int get apiTimeout => int.tryParse(_getEnvVar('API_TIMEOUT', '30')) ?? 30;
+  String get payloadEncryptionKey => _getEnvVar('PAYLOAD_ENCRYPTION_KEY', '');
 
   // App Configuration
   String get appName => _getEnvVar('APP_NAME', 'Paarisetu');

@@ -69,7 +69,7 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
                     ],
                   )
                 : ListView.separated(
-                    padding: const EdgeInsets.all(16),
+                    padding: pagePadding(context, horizontal: 16, top: 12),
                     itemCount: _policies.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
@@ -78,9 +78,9 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
                       return AppCard(
                         child: ListTile(
                           contentPadding: EdgeInsets.zero,
-                          leading: const CircleAvatar(
-                            backgroundColor: AppColors.navy,
-                            child: Icon(Icons.shield_outlined, color: AppColors.gold),
+                          leading: const AppIconBadge(
+                            icon: Icons.health_and_safety_rounded,
+                            color: AppColors.purple,
                           ),
                           title: Text(
                             '${map['provider'] ?? 'Insurance'}',

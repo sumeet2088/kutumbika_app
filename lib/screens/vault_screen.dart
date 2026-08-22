@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/error_handler.dart';
+import '../utils/layout.dart';
 import '../utils/ui.dart';
 import 'category_documents_screen.dart';
 import 'deleted_documents_screen.dart';
@@ -109,7 +110,7 @@ class _VaultScreenState extends State<VaultScreen> {
             : _error != null
                 ? ListView(children: [EmptyState(message: _error!)])
                 : ListView(
-                    padding: const EdgeInsets.all(16),
+                    padding: pagePadding(context, horizontal: 16, top: 12),
                     children: [
                       AppCard(
                         color: AppColors.navy,
@@ -141,9 +142,12 @@ class _VaultScreenState extends State<VaultScreen> {
                       const SizedBox(height: 16),
                       TextField(
                         onChanged: (v) => setState(() => _query = v),
-                        decoration: fieldDecoration(hint: 'Search categories or documents', prefix: Icons.search),
+                        decoration: fieldDecoration(
+                          hint: 'Search categories or documents',
+                          prefix: Icons.search_rounded,
+                        ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       if (filteredCats.isEmpty)
                         const EmptyState(message: 'No categories yet')
                       else
@@ -151,15 +155,17 @@ class _VaultScreenState extends State<VaultScreen> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: filteredCats.length,
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 1.15,
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: AppLayout.of(context).vaultColumns,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            mainAxisExtent: 76,
                           ),
                           itemBuilder: (context, i) {
                             final cat = filteredCats[i] as Map;
                             final ref = '${cat['document_category_reference_number']}';
+                            final name = '${cat['document_name']}';
+                            final look = categoryLook(name);
                             return InkWell(
                               onTap: () {
                                 Navigator.push(
@@ -167,19 +173,38 @@ class _VaultScreenState extends State<VaultScreen> {
                                   MaterialPageRoute(
                                     builder: (_) => CategoryDocumentsScreen(
                                       categoryRef: ref,
-                                      categoryName: '${cat['document_name']}',
+                                      categoryName: name,
                                     ),
                                   ),
                                 ).then((_) => _load());
                               },
                               child: AppCard(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                child: Row(
                                   children: [
-                                    const Icon(Icons.folder_outlined, color: AppColors.navy, size: 28),
-                                    const Spacer(),
-                                    Text('${cat['document_name']}', maxLines: 2, style: bodyStyle(weight: FontWeight.w700)),
-                                    Text('${_countFor(ref)} files', style: bodyStyle(size: 12, color: AppColors.grey)),
+                                    AppIconBadge(icon: look.$1, color: look.$2, size: 36, iconSize: 20),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            name,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: bodyStyle(weight: FontWeight.w800, size: 14),
+                                          ),
+                                          Text(
+                                            '${_countFor(ref)} files',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: bodyStyle(size: 11, color: AppColors.grey, weight: FontWeight.w600),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -194,11 +219,14 @@ class _VaultScreenState extends State<VaultScreen> {
                       else
                         ..._docs.take(8).map((doc) {
                           final map = doc as Map;
+                          final title = '${map['title'] ?? map['file_name']}';
+                          final look = categoryLook(title);
                           return ListTile(
                             contentPadding: EdgeInsets.zero,
-                            leading: const Icon(Icons.insert_drive_file, color: AppColors.navy),
-                            title: Text('${map['title'] ?? map['file_name']}', style: bodyStyle(weight: FontWeight.w600)),
+                            leading: AppIconBadge(icon: look.$1, color: look.$2, size: 40, iconSize: 20),
+                            title: Text(title, style: bodyStyle(weight: FontWeight.w600)),
                             subtitle: Text(bytesLabel(map['file_size'] ?? 0), style: bodyStyle(size: 12, color: AppColors.grey)),
+                            trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.grey),
                             onTap: () {
                               Navigator.push(
                                 context,

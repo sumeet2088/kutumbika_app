@@ -23,6 +23,7 @@ class AppConstants {
 
   static String get userDetailsEndpoint => '$apiPrefix/user/details';
   static String get userUpdateEndpoint => '$apiPrefix/user/update';
+  static String get userPhotoEndpoint => '$apiPrefix/user/photo';
   static String get userOtpSendEndpoint => '$apiPrefix/user/otp/send';
   static String get userOtpVerifyEndpoint => '$apiPrefix/user/otp/verify';
   static String get passwordCreateEndpoint => '$apiPrefix/user/password/create';
@@ -33,6 +34,10 @@ class AppConstants {
       '$apiPrefix/user/preferences/update';
   static String get userDeactivateEndpoint => '$apiPrefix/user/deactivate';
   static String get userDeleteEndpoint => '$apiPrefix/user/delete';
+  static String get privacyConsentsEndpoint => '$apiPrefix/privacy/consents';
+  static String privacyWithdrawEndpoint(String type) =>
+      '$apiPrefix/privacy/consents/$type/withdraw';
+  static String get privacyExportEndpoint => '$apiPrefix/privacy/export';
 
   static String get familyCreateEndpoint => '$apiPrefix/family/create';
   static String get familyPendingInvitesEndpoint =>
@@ -109,6 +114,8 @@ class AppConstants {
 
   static String get dashboardEndpoint => '$apiPrefix/dashboard/';
   static String get searchEndpoint => '$apiPrefix/search/';
+  static String get ragAskEndpoint => '$apiPrefix/rag/ask';
+  static String get ragUsageEndpoint => '$apiPrefix/rag/usage';
   static String get subscriptionEndpoint => '$apiPrefix/subscription/';
   static String get subscriptionCancelEndpoint => '$apiPrefix/subscription/cancel';
   static String get subscriptionRenewEndpoint => '$apiPrefix/subscription/renew';

@@ -112,11 +112,11 @@ class _MainShellState extends State<MainShell> {
                 const SizedBox(height: 16),
                 Text('Add to your vault', style: headingStyle(size: 20)),
                 const SizedBox(height: 12),
-                _sheetTile(Icons.upload_file, 'Upload document', 'document'),
-                _sheetTile(Icons.person_add_alt, 'Invite family member', 'member'),
-                _sheetTile(Icons.alarm_add, 'Add reminder', 'reminder'),
-                _sheetTile(Icons.health_and_safety_outlined, 'Add insurance', 'insurance'),
-                _sheetTile(Icons.directions_car_outlined, 'Add vehicle', 'vehicle'),
+                _sheetTile(Icons.upload_file_rounded, AppColors.sky, 'Upload document', 'document'),
+                _sheetTile(Icons.person_add_alt_1_rounded, AppColors.emerald, 'Invite family member', 'member'),
+                _sheetTile(Icons.notification_add_rounded, AppColors.orange, 'Add reminder', 'reminder'),
+                _sheetTile(Icons.health_and_safety_rounded, AppColors.purple, 'Add insurance', 'insurance'),
+                _sheetTile(Icons.directions_car_rounded, AppColors.teal, 'Add vehicle', 'vehicle'),
               ],
             ),
           ),
@@ -150,13 +150,11 @@ class _MainShellState extends State<MainShell> {
     await _loadChrome();
   }
 
-  Widget _sheetTile(IconData icon, String title, String value) {
+  Widget _sheetTile(IconData icon, Color color, String title, String value) {
     return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: AppColors.bannerBlue,
-        child: Icon(icon, color: AppColors.sky),
-      ),
-      title: Text(title, style: bodyStyle(weight: FontWeight.w600)),
+      leading: AppIconBadge(icon: icon, color: color),
+      title: Text(title, style: bodyStyle(weight: FontWeight.w700)),
+      trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.grey),
       onTap: () => Navigator.pop(context, value),
     );
   }
@@ -229,8 +227,10 @@ class _MainShellState extends State<MainShell> {
           floatingActionButton: FloatingActionButton(
             onPressed: _openAdd,
             backgroundColor: AppColors.navy,
-            elevation: 4,
-            child: const Icon(Icons.add, color: Colors.white, size: 28),
+            foregroundColor: Colors.white,
+            elevation: 8,
+            shape: const CircleBorder(),
+            child: const Icon(Icons.add_rounded, color: Colors.white, size: 30),
           ),
           floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
           bottomNavigationBar: AppFooter(

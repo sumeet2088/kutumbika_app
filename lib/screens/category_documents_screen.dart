@@ -76,7 +76,7 @@ class _CategoryDocumentsScreenState extends State<CategoryDocumentsScreen> {
         child: _loading
             ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
             : ListView(
-                padding: const EdgeInsets.all(16),
+                padding: pagePadding(context, horizontal: 16, top: 12),
                 children: [
                   TextField(
                     onChanged: (v) => setState(() => _query = v),

@@ -69,7 +69,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                     ],
                   )
                 : ListView.separated(
-                    padding: const EdgeInsets.all(16),
+                    padding: pagePadding(context, horizontal: 16, top: 12),
                     itemCount: _vehicles.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
@@ -77,9 +77,9 @@ class _VehicleScreenState extends State<VehicleScreen> {
                       return AppCard(
                         child: ListTile(
                           contentPadding: EdgeInsets.zero,
-                          leading: const CircleAvatar(
-                            backgroundColor: AppColors.navy,
-                            child: Icon(Icons.directions_car_outlined, color: AppColors.gold),
+                          leading: const AppIconBadge(
+                            icon: Icons.directions_car_rounded,
+                            color: AppColors.sky,
                           ),
                           title: Text(
                             '${map['make'] ?? ''} ${map['model'] ?? ''}'.trim(),

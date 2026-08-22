@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paarisetu_app/services/env_service.dart';
 import 'package:paarisetu_app/utils/app_colors.dart';
 import 'package:paarisetu_app/utils/app_constants.dart';
+import 'package:paarisetu_app/utils/layout.dart';
 import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EnvService.instance.initialize();
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+  await AppLayout.configureOrientations();
   runApp(const PaarisetuApp());
 }
 

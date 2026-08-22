@@ -57,7 +57,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
         child: _loading
             ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
             : ListView(
-                padding: const EdgeInsets.all(16),
+                padding: pagePadding(context, horizontal: 16, top: 12),
                 children: [
                   if (_families.isNotEmpty)
                     ..._families.map((f) {
@@ -69,9 +69,9 @@ class _FamilyScreenState extends State<FamilyScreen> {
                         child: AppCard(
                           child: ListTile(
                             contentPadding: EdgeInsets.zero,
-                            leading: const CircleAvatar(
-                              backgroundColor: AppColors.navy,
-                              child: Icon(Icons.home, color: AppColors.gold),
+                            leading: const AppIconBadge(
+                              icon: Icons.home_rounded,
+                              color: AppColors.emerald,
                             ),
                             title: Text('${map['family_name']}', style: bodyStyle(weight: FontWeight.w700)),
                             subtitle: Text(
@@ -96,9 +96,9 @@ class _FamilyScreenState extends State<FamilyScreen> {
                     AppCard(
                       child: ListTile(
                         contentPadding: EdgeInsets.zero,
-                        leading: const CircleAvatar(
-                          backgroundColor: AppColors.navy,
-                          child: Icon(Icons.home, color: AppColors.gold),
+                        leading: const AppIconBadge(
+                          icon: Icons.home_rounded,
+                          color: AppColors.emerald,
                         ),
                         title: Text('${_family!['family_name']}', style: bodyStyle(weight: FontWeight.w700)),
                         subtitle: Text('Your role: ${_family!['my_role'] ?? 'member'}'),

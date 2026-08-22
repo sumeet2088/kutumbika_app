@@ -83,6 +83,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 : _items.isEmpty
                     ? const EmptyState(message: 'No reminders')
                     : ListView.builder(
+                        padding: pagePadding(context, horizontal: 8, top: 0),
                         itemCount: _items.length,
                         itemBuilder: (context, i) {
                           final item = _items[i] as Map;

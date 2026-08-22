@@ -5,7 +5,9 @@ import '../utils/app_colors.dart';
 import '../utils/ui.dart';
 import 'activity_screen.dart';
 import 'password_screen.dart';
+import 'policy_screen.dart';
 import 'preferences_screen.dart';
+import 'privacy_settings_screen.dart';
 import 'subscription_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -17,7 +19,7 @@ class SettingsScreen extends StatelessWidget {
       backgroundColor: AppColors.cream,
       appBar: navyAppBar('Settings'),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: pagePadding(context, horizontal: 16, top: 12),
         children: [
           Text('Account', style: bodyStyle(weight: FontWeight.w700, size: 16)),
           _tile(context, 'Change password', Icons.lock_outline, () {
@@ -33,6 +35,14 @@ class SettingsScreen extends StatelessWidget {
           }),
           _tile(context, 'Subscription', Icons.workspace_premium_outlined, () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionScreen()));
+          }),
+          const SizedBox(height: 16),
+          Text('Privacy', style: bodyStyle(weight: FontWeight.w700, size: 16)),
+          _tile(context, 'Privacy & Data', Icons.privacy_tip_outlined, () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacySettingsScreen()));
+          }),
+          _tile(context, 'Legal documents', Icons.gavel_outlined, () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const PolicyListScreen()));
           }),
           const SizedBox(height: 16),
           Text('Danger zone', style: bodyStyle(weight: FontWeight.w700, size: 16, color: AppColors.error)),

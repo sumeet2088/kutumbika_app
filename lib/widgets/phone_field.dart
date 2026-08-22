@@ -75,6 +75,8 @@ class PhoneField extends StatelessWidget {
             decoration: fieldDecoration(
               label: label,
               hint: 'National number',
+              prefix: Icons.phone_rounded,
+              enabled: enabled,
             ),
           ),
         ),

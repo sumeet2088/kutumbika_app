@@ -112,6 +112,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
             controller: _name,
             label: 'Family Name',
             hint: 'Enter family name',
+            prefix: Icons.home_rounded,
           ),
           const SizedBox(height: 32),
           PrimaryButton(

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/login_result.dart';
 import '../utils/app_constants.dart';
+import '../utils/layout.dart';
 import 'api_client.dart';
 import 'device_crypto.dart';
 import 'session_store.dart';
@@ -32,7 +33,7 @@ class ApiService {
         'locale': AppConstants.defaultLocale,
         'timezone': AppConstants.defaultTimezone,
         'device': {
-          'type': 'phone',
+          'type': AppLayout.detectDeviceType(),
           'device_id': session.deviceId,
           'manufacturer': _manufacturer(),
           'model': _model(),
@@ -238,6 +239,18 @@ class ApiService {
 
   Future<Map<String, dynamic>> updateUser(Map<String, dynamic> body) {
     return _client.postJson(AppConstants.userUpdateEndpoint, body: body);
+  }
+
+  Future<Map<String, dynamic>> uploadUserPhoto(File photo) {
+    return _client.postMultipart(
+      AppConstants.userPhotoEndpoint,
+      fields: const {},
+      files: {'profile_photo': photo},
+    );
+  }
+
+  Future<Uint8List> getUserPhoto() {
+    return _client.getBytes(AppConstants.userPhotoEndpoint);
   }
 
   Future<Map<String, dynamic>> sendUserOTP({String? mobile, String? email}) {
@@ -472,6 +485,8 @@ class ApiService {
     String? description,
     String? remarks,
     String? documentType,
+    bool allowAI = false,
+    bool authorizedFamilyData = false,
   }) {
     return _client.postMultipart(
       AppConstants.documentsUploadEndpoint,
@@ -482,9 +497,33 @@ class ApiService {
         if (description != null) 'description': description,
         if (remarks != null) 'remarks': remarks,
         if (documentType != null) 'document_type': documentType,
+        'allow_ai_processing': allowAI ? 'true' : 'false',
+        'authorized_family_data': authorizedFamilyData ? 'true' : 'false',
       },
       files: {'file': file},
     );
+  }
+
+  Future<Map<String, dynamic>> listConsents() {
+    return _client.getJson(AppConstants.privacyConsentsEndpoint);
+  }
+
+  Future<Map<String, dynamic>> updateConsents(List<Map<String, dynamic>> consents) {
+    return _client.postJson(
+      AppConstants.privacyConsentsEndpoint,
+      body: {'consents': consents, 'source': 'APP'},
+    );
+  }
+
+  Future<Map<String, dynamic>> withdrawConsent(String type) {
+    return _client.postJson(
+      AppConstants.privacyWithdrawEndpoint(type),
+      body: {'source': 'APP'},
+    );
+  }
+
+  Future<Map<String, dynamic>> exportMyData() {
+    return _client.getJson(AppConstants.privacyExportEndpoint);
   }
 
   Future<Map<String, dynamic>> updateDocument({
@@ -720,6 +759,30 @@ class ApiService {
     );
   }
 
+  Future<Map<String, dynamic>> askRAG({
+    required String question,
+    String? familyRef,
+    String? documentRef,
+  }) {
+    return _client.postJson(
+      AppConstants.ragAskEndpoint,
+      body: {
+        'question': question,
+        if (familyRef != null) 'family_reference_number': familyRef,
+        if (documentRef != null) 'document_reference_number': documentRef,
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> ragUsage({String? familyRef}) {
+    return _client.getJson(
+      AppConstants.ragUsageEndpoint,
+      query: {
+        if (familyRef != null) 'family_reference_number': familyRef,
+      },
+    );
+  }
+
   Future<Map<String, dynamic>> getDashboard({String? familyRef}) async {
     final data = await _client.getJson(
       AppConstants.dashboardEndpoint,
@@ -736,20 +799,20 @@ class ApiService {
 
   Map<String, dynamic> _deviceProofFields() {
     if (session.publicKeyPem == null || session.privateKeyD == null) {
-      return {'device_name': 'Paarisetu Phone'};
+      return {'device_name': AppLayout.deviceDisplayName()};
     }
     final challenge = session.challenge;
     if (challenge == null || challenge.isEmpty) {
       return {
         'public_key': session.publicKeyPem,
-        'device_name': 'Paarisetu Phone',
+        'device_name': AppLayout.deviceDisplayName(),
       };
     }
     return {
       'public_key': session.publicKeyPem,
       'device_signature':
           DeviceCrypto.signChallenge(session.privateKeyD!, challenge),
-      'device_name': 'Paarisetu Phone',
+      'device_name': AppLayout.deviceDisplayName(),
     };
   }
 

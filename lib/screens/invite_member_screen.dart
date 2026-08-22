@@ -75,7 +75,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
       backgroundColor: AppColors.cream,
       appBar: navyAppBar('Invite Member'),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: pagePadding(context),
         children: [
           Text('Add a family member to this vault. Role is checked against the current plan.',
               style: bodyStyle(color: AppColors.grey)),
@@ -90,35 +90,22 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
             controller: _email,
             label: 'Email (optional)',
             hint: 'email@example.com',
+            prefix: Icons.alternate_email_rounded,
             keyboardType: TextInputType.emailAddress,
           ),
-          const SizedBox(height: 16),
-          const Text('Role'),
-          const SizedBox(height: 8),
-          InputDecorator(
-            decoration: fieldDecoration(),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _role,
-                isExpanded: true,
-                items: _roles.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
-                onChanged: (v) => setState(() => _role = v ?? 'VIEWER'),
-              ),
-            ),
+          const SizedBox(height: 14),
+          DropdownButtonFormField<String>(
+            value: _role,
+            decoration: fieldDecoration(label: 'Role', prefix: Icons.shield_rounded),
+            items: _roles.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+            onChanged: (v) => setState(() => _role = v ?? 'VIEWER'),
           ),
-          const SizedBox(height: 16),
-          const Text('Relationship'),
-          const SizedBox(height: 8),
-          InputDecorator(
-            decoration: fieldDecoration(),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _relation,
-                isExpanded: true,
-                items: _relations.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
-                onChanged: (v) => setState(() => _relation = v ?? 'OTHER'),
-              ),
-            ),
+          const SizedBox(height: 14),
+          DropdownButtonFormField<String>(
+            value: _relation,
+            decoration: fieldDecoration(label: 'Relationship', prefix: Icons.family_restroom_rounded),
+            items: _relations.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+            onChanged: (v) => setState(() => _relation = v ?? 'OTHER'),
           ),
           const SizedBox(height: 28),
           PrimaryButton(label: 'Save Member', loading: _loading, onPressed: _save),

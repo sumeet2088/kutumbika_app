@@ -109,34 +109,36 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
       backgroundColor: AppColors.cream,
       appBar: navyAppBar('Add Vehicle'),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: pagePadding(context),
         children: [
-          TextField(controller: _make, decoration: fieldDecoration(hint: 'Make')),
-          const SizedBox(height: 12),
-          TextField(controller: _model, decoration: fieldDecoration(hint: 'Model')),
-          const SizedBox(height: 12),
-          TextField(controller: _reg, decoration: fieldDecoration(hint: 'Registration number')),
-          const SizedBox(height: 12),
-          TextField(
+          AppTextField(controller: _make, label: 'Make', prefix: Icons.factory_rounded),
+          const SizedBox(height: 14),
+          AppTextField(controller: _model, label: 'Model', prefix: Icons.directions_car_rounded),
+          const SizedBox(height: 14),
+          AppTextField(controller: _reg, label: 'Registration number', prefix: Icons.pin_rounded),
+          const SizedBox(height: 14),
+          AppTextField(
             controller: _year,
+            label: 'Year',
+            prefix: Icons.calendar_month_rounded,
             keyboardType: TextInputType.number,
-            decoration: fieldDecoration(hint: 'Year'),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Text('RC document', style: bodyStyle(weight: FontWeight.w700)),
-          const SizedBox(height: 8),
-          Text('Upload now or attach an existing Documents file. The RC is stored only once.',
-              style: bodyStyle(size: 12, color: AppColors.grey)),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: _pick,
-            icon: const Icon(Icons.upload_file),
-            label: Text(_file == null ? 'Upload RC' : _file!.path.split(RegExp(r'[\\/]')).last),
+          const SizedBox(height: 6),
+          Text(
+            'Upload now or attach an existing Documents file. The RC is stored only once.',
+            style: bodyStyle(size: 12, color: AppColors.grey),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+          OutlineActionButton(
+            label: _file == null ? 'Upload RC' : _file!.path.split(RegExp(r'[\\/]')).last,
+            onPressed: _pick,
+          ),
+          const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             value: _documentRef,
-            decoration: fieldDecoration(hint: 'Or attach existing document'),
+            decoration: fieldDecoration(label: 'Or attach existing document', prefix: Icons.description_rounded),
             items: [
               const DropdownMenuItem(value: null, child: Text('None')),
               ..._documents.map((d) {
@@ -152,7 +154,7 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
               _file = null;
             }),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           PrimaryButton(label: _loading ? 'Saving...' : 'Save vehicle', onPressed: _loading ? null : _save),
         ],
       ),

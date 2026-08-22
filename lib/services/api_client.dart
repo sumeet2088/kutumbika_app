@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../utils/app_constants.dart';
+import 'payload_crypto.dart';
 import 'session_store.dart';
 
 enum AuthMode { none, visitor, user, refresh }
@@ -137,7 +138,8 @@ class ApiClient {
       body: body,
       request: (headers) {
         final url = _uri(path, query);
-        final encoded = body == null ? null : jsonEncode(body);
+        final payload = body == null ? null : PayloadCrypto.seal(body);
+        final encoded = payload == null ? null : jsonEncode(payload);
         if (method == 'GET') {
           return http.get(url, headers: headers).timeout(
                 Duration(seconds: AppConstants.connectionTimeout),
@@ -208,8 +210,9 @@ class ApiClient {
     try {
       final headers = _headers(auth: AuthMode.refresh);
       final url = _uri(AppConstants.refreshEndpoint);
+      final refreshBody = jsonEncode(PayloadCrypto.seal(<String, dynamic>{}));
       final response = await http
-          .post(url, headers: headers, body: '{}')
+          .post(url, headers: headers, body: refreshBody)
           .timeout(Duration(seconds: AppConstants.connectionTimeout));
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = _decode(response);
@@ -230,7 +233,11 @@ class ApiClient {
   Map<String, dynamic> _decode(http.Response response) {
     Map<String, dynamic> json;
     try {
-      final decoded = jsonDecode(response.body);
+      var raw = response.body;
+      if (PayloadCrypto.enabled) {
+        raw = PayloadCrypto.openString(raw) ?? raw;
+      }
+      final decoded = jsonDecode(raw);
       json = decoded is Map<String, dynamic>
           ? decoded
           : <String, dynamic>{'data': decoded};
@@ -252,7 +259,11 @@ class ApiClient {
 
   ApiException _fromResponse(http.Response response) {
     try {
-      final decoded = jsonDecode(response.body);
+      var raw = response.body;
+      if (PayloadCrypto.enabled) {
+        raw = PayloadCrypto.openString(raw) ?? raw;
+      }
+      final decoded = jsonDecode(raw);
       if (decoded is Map<String, dynamic>) {
         return _fromJson(response.statusCode, decoded);
       }

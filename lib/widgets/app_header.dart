@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../utils/app_colors.dart';
-import '../utils/app_constants.dart';
+import '../utils/layout.dart';
 import '../widgets/app_logo.dart';
 
 class AppHeader extends StatelessWidget implements PreferredSizeWidget {
@@ -20,51 +19,68 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onBell;
 
   @override
-  Size get preferredSize => const Size.fromHeight(92);
+  Size get preferredSize {
+    final tablet = AppLayout.detectDeviceType() == 'tablet';
+    return Size.fromHeight(tablet ? 85 : 77);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final layout = AppLayout.of(context);
     return AppBar(
       backgroundColor: AppColors.white,
+      surfaceTintColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      toolbarHeight: 92,
+      toolbarHeight: layout.headerHeight,
       automaticallyImplyLeading: false,
-      titleSpacing: 8,
+      titleSpacing: 0,
+      flexibleSpace: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.navy.withValues(alpha: 0.07),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+      ),
       title: Row(
         children: [
           IconButton(
             onPressed: onLeading,
-            icon: Icon(showBack ? Icons.arrow_back_ios_new : Icons.menu, color: AppColors.navy),
+            tooltip: showBack ? 'Back' : 'Menu',
+            icon: Icon(
+              showBack ? Icons.arrow_back_rounded : Icons.menu_rounded,
+              color: AppColors.navy,
+              size: layout.isTablet ? 28 : 26,
+            ),
           ),
           Expanded(
-            child: Column(
-              children: [
-                const AppLogo(kind: LogoKind.full, height: 46),
-                Text(
-                  AppConstants.appTagline,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
-                    fontSize: 10,
-                    color: AppColors.grey,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+            child: Center(
+              child: AppLogo(kind: LogoKind.full, height: layout.logoHeight),
             ),
           ),
           IconButton(
             onPressed: onBell,
+            tooltip: 'Notifications',
             icon: Badge(
               isLabelVisible: unread > 0,
               backgroundColor: AppColors.error,
-              label: Text('$unread', style: const TextStyle(fontSize: 10)),
+              label: Text(
+                '$unread',
+                style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w700),
+              ),
               child: const Icon(Icons.notifications_none_rounded, color: AppColors.navy, size: 26),
             ),
           ),
         ],
+      ),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(height: 1, color: const Color(0xFFE6EAF0)),
       ),
     );
   }
