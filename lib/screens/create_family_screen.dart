@@ -78,60 +78,58 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        backgroundColor: AppColors.white,
-        elevation: 0,
-        foregroundColor: AppColors.primaryDarkBlue,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(24),
+    return AuthScaffold(
+      showBack: !widget.asOnboarding,
+      child: Column(
         children: [
-          Text(
-            'Create Family',
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primaryDarkBlue,
-            ),
-          ),
+          Text('Create Family', textAlign: TextAlign.center, style: headingStyle()),
           const SizedBox(height: 8),
           Text(
-            'A family is required to store and share documents.',
-            style: GoogleFonts.inter(color: AppColors.grey),
+            'Add your family photo and give your family a name.',
+            textAlign: TextAlign.center,
+            style: bodyStyle(color: AppColors.grey),
           ),
-          const SizedBox(height: 24),
-          Center(
-            child: GestureDetector(
-              onTap: _pick,
-              child: CircleAvatar(
-                radius: 40,
-                backgroundColor: AppColors.secondaryBlue,
-                backgroundImage: _photo == null ? null : FileImage(_photo!),
-                child: _photo == null
-                    ? const Icon(Icons.camera_alt, color: Colors.white)
-                    : null,
+          const SizedBox(height: 28),
+          GestureDetector(
+            onTap: _pick,
+            child: Container(
+              width: 128,
+              height: 128,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.navy, width: 1.4),
+                image: _photo == null
+                    ? null
+                    : DecorationImage(image: FileImage(_photo!), fit: BoxFit.cover),
               ),
+              child: _photo == null
+                  ? const Icon(Icons.photo_camera_outlined, color: AppColors.gold, size: 36)
+                  : null,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
           AppTextField(
             controller: _name,
-            label: 'Family name',
-            hint: 'Singh Family',
-            prefix: Icons.family_restroom,
+            label: 'Family Name',
+            hint: 'Enter family name',
           ),
           const SizedBox(height: 32),
           PrimaryButton(
-            label: 'Create Family',
+            label: 'Submit Family',
             loading: _loading,
             onPressed: _create,
           ),
           const SizedBox(height: 12),
           TextButton(
             onPressed: _skip,
-            child: const Text('Skip for now'),
+            child: Text(
+              'Skip for now',
+              style: GoogleFonts.inter(
+                decoration: TextDecoration.underline,
+                color: const Color(0xFF4A90E2),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),

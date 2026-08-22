@@ -20,6 +20,7 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.cream,
       body: IndexedStack(
         index: _index,
         children: const [
@@ -34,8 +35,8 @@ class _MainShellState extends State<MainShell> {
         currentIndex: _index,
         onTap: (i) => setState(() => _index = i),
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: AppColors.primaryDarkBlue,
+        backgroundColor: AppColors.white,
+        selectedItemColor: AppColors.navy,
         unselectedItemColor: AppColors.grey,
         selectedFontSize: 12,
         unselectedFontSize: 12,

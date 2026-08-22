@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../services/api_service.dart';
 import '../utils/app_colors.dart';
@@ -33,9 +32,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
       final pending = await api.listPendingInvitations();
       Map<String, dynamic>? family;
       final ref = api.session.familyReferenceNumber;
-      if (ref != null) {
-        family = await api.getFamilyDetails(ref);
-      }
+      if (ref != null) family = await api.getFamilyDetails(ref);
       setState(() {
         _pending = (pending['invitations'] as List?) ?? [];
         _family = family;
@@ -43,48 +40,44 @@ class _FamilyScreenState extends State<FamilyScreen> {
       });
     } catch (e) {
       setState(() => _loading = false);
-      if (mounted) {
-        ErrorHandler.showError(context, ErrorHandler.getErrorMessage(e));
-      }
+      if (mounted) ErrorHandler.showError(context, ErrorHandler.getErrorMessage(e));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        title: const Text('Family'),
-        backgroundColor: AppColors.logoBlack,
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: AppColors.cream,
+      appBar: navyAppBar('Family', implyLeading: false),
       body: RefreshIndicator(
         onRefresh: _load,
         child: _loading
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
             : ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
                   if (_family != null)
-                    ListTile(
-                      tileColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      leading: const Icon(Icons.home,
-                          color: AppColors.goldYellow),
-                      title: Text('${_family!['family_name']}'),
-                      subtitle: Text('Role: ${_family!['my_role'] ?? 'member'}'),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => FamilyDetailScreen(
-                              familyRef:
-                                  '${_family!['family_reference_number']}',
+                    AppCard(
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const CircleAvatar(
+                          backgroundColor: AppColors.navy,
+                          child: Icon(Icons.home, color: AppColors.gold),
+                        ),
+                        title: Text('${_family!['family_name']}', style: bodyStyle(weight: FontWeight.w700)),
+                        subtitle: Text('Your role: ${_family!['my_role'] ?? 'member'}'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => FamilyDetailScreen(
+                                familyRef: '${_family!['family_reference_number']}',
+                              ),
                             ),
-                          ),
-                        ).then((_) => _load());
-                      },
+                          ).then((_) => _load());
+                        },
+                      ),
                     )
                   else
                     PrimaryButton(
@@ -93,48 +86,48 @@ class _FamilyScreenState extends State<FamilyScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (_) =>
-                                  const CreateFamilyScreen(asOnboarding: false)),
+                            builder: (_) => const CreateFamilyScreen(asOnboarding: false),
+                          ),
                         ).then((_) => _load());
                       },
                     ),
                   const SizedBox(height: 24),
-                  Text(
-                    'Pending invitations',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-                  ),
+                  Text('Pending invitations', style: bodyStyle(weight: FontWeight.w700, size: 16)),
                   const SizedBox(height: 8),
                   if (_pending.isEmpty)
-                    const Text('No pending invitations',
-                        style: TextStyle(color: AppColors.grey))
+                    Text('No pending invitations', style: bodyStyle(color: AppColors.grey))
                   else
                     ..._pending.map((inv) {
                       final map = inv as Map;
-                      return Card(
-                        child: ListTile(
-                          title: Text('${map['family_name'] ?? 'Family'}'),
-                          subtitle: Text(
-                              '${map['role']} · ${map['relation']}'),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: AppCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              TextButton(
-                                onPressed: () async {
-                                  await ApiService.instance.acceptInvitation(
-                                    '${map['family_invitation_reference_number']}',
-                                  );
-                                  await _load();
-                                },
-                                child: const Text('Accept'),
-                              ),
-                              TextButton(
-                                onPressed: () async {
-                                  await ApiService.instance.rejectInvitation(
-                                    '${map['family_invitation_reference_number']}',
-                                  );
-                                  await _load();
-                                },
-                                child: const Text('Reject'),
+                              Text('${map['family_name'] ?? 'Family'}', style: bodyStyle(weight: FontWeight.w700)),
+                              Text('${map['role']} · ${map['relation']}', style: bodyStyle(color: AppColors.grey)),
+                              Row(
+                                children: [
+                                  TextButton(
+                                    onPressed: () async {
+                                      await ApiService.instance.acceptInvitation(
+                                        '${map['family_invitation_reference_number']}',
+                                      );
+                                      await _load();
+                                    },
+                                    child: const Text('Accept'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () async {
+                                      await ApiService.instance.rejectInvitation(
+                                        '${map['family_invitation_reference_number']}',
+                                      );
+                                      await _load();
+                                    },
+                                    child: const Text('Reject'),
+                                  ),
+                                ],
                               ),
                             ],
                           ),

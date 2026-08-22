@@ -4,9 +4,10 @@ import 'package:flutter/services.dart';
 import '../services/api_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/error_handler.dart';
+import '../utils/ui.dart';
 import '../widgets/app_logo.dart';
-import 'login_screen.dart';
 import 'main_shell.dart';
+import 'welcome_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -17,6 +18,7 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   String? _error;
+  bool _ready = false;
 
   @override
   void initState() {
@@ -42,58 +44,72 @@ class _SplashScreenState extends State<SplashScreen> {
       }
       await api.initializeApp();
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
+      setState(() => _ready = true);
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = ErrorHandler.getErrorMessage(e));
     }
   }
 
+  void _continue() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final logoWidth = MediaQuery.sizeOf(context).width * 0.86;
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light.copyWith(
-        statusBarColor: AppColors.logoBlack,
-        systemNavigationBarColor: AppColors.logoBlack,
+      value: SystemUiOverlayStyle.dark.copyWith(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: AppColors.white,
       ),
       child: Scaffold(
-        backgroundColor: AppColors.logoBlack,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: AppLogo(width: MediaQuery.sizeOf(context).width * 0.72),
-              ),
-              const SizedBox(height: 40),
-              if (_error == null)
-                const CircularProgressIndicator(
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(AppColors.goldYellow),
-                )
-              else ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Text(
-                    _error!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white70),
+        backgroundColor: AppColors.white,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+            child: Column(
+              children: [
+                const Spacer(),
+                Center(
+                  child: AppLogo(kind: LogoKind.full, width: logoWidth),
+                ),
+                const Spacer(),
+                if (_error == null && !_ready)
+                  Column(
+                    children: [
+                      const SizedBox(
+                        width: 42,
+                        height: 42,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          color: AppColors.gold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Loading Your Family Secure Place...',
+                        style: bodyStyle(color: AppColors.grey, size: 13),
+                      ),
+                    ],
+                  )
+                else if (_error != null) ...[
+                  Text(_error!, textAlign: TextAlign.center, style: bodyStyle(color: AppColors.error)),
+                  const SizedBox(height: 16),
+                  PrimaryButton(
+                    label: 'Retry',
+                    onPressed: () {
+                      setState(() => _error = null);
+                      _bootstrap();
+                    },
                   ),
-                ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () {
-                    setState(() => _error = null);
-                    _bootstrap();
-                  },
-                  child: const Text('Retry',
-                      style: TextStyle(color: AppColors.goldYellow)),
-                ),
+                ] else
+                  PrimaryButton(label: 'Get Started', onPressed: _continue),
+                const SizedBox(height: 12),
               ],
-            ],
+            ),
           ),
         ),
       ),

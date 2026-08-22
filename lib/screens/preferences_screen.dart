@@ -68,12 +68,8 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        title: const Text('Preferences'),
-        backgroundColor: AppColors.logoBlack,
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: AppColors.cream,
+      appBar: navyAppBar('Preferences'),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(

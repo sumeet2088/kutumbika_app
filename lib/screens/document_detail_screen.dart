@@ -8,6 +8,8 @@ import 'package:path_provider/path_provider.dart';
 import '../services/api_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/error_handler.dart';
+import '../utils/phone.dart';
+import '../utils/ui.dart';
 
 class DocumentDetailScreen extends StatefulWidget {
   const DocumentDetailScreen({super.key, required this.documentRef});
@@ -91,13 +93,14 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
   }
 
   Future<void> _share() async {
-    final mobile = await _ask('Grantee mobile');
+    final mobile = await _ask('Grantee mobile (E.164, e.g. +919876543210)');
     if (mobile == null || mobile.isEmpty) return;
+    final e164 = toE164(mobile) ?? mobile;
     try {
       await ApiService.instance.createShare(
         documentRef: widget.documentRef,
         permission: 'VIEW',
-        mobile: mobile,
+        mobile: e164,
       );
       await _load();
     } catch (e) {
@@ -146,12 +149,8 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        title: Text(_doc?['title']?.toString() ?? 'Document'),
-        backgroundColor: AppColors.logoBlack,
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: AppColors.cream,
+      appBar: navyAppBar(_doc?['title']?.toString() ?? 'Document'),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(

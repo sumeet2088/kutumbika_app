@@ -41,7 +41,7 @@ class ApiService {
         },
         'security': {
           'type': platform == 'ios' ? 'app_attest' : 'play_integrity',
-          'request_hash': 'kutumbika-init',
+          'request_hash': 'paarisetu-init',
           'integrity_token': 'dev-integrity-token',
         },
       },
@@ -414,6 +414,27 @@ class ApiService {
     );
   }
 
+  Future<Map<String, dynamic>> changeMemberRole({
+    required String familyRef,
+    required String memberRef,
+    required String role,
+  }) {
+    return _client.postJson(
+      AppConstants.familyMemberRoleEndpoint(familyRef, memberRef),
+      body: {'role': role},
+    );
+  }
+
+  Future<Map<String, dynamic>> removeMember({
+    required String familyRef,
+    required String memberRef,
+  }) {
+    return _client.postJson(
+      AppConstants.familyMemberRemoveEndpoint(familyRef, memberRef),
+      body: {},
+    );
+  }
+
   Future<Map<String, dynamic>> listFamilyActivity(String familyRef) {
     return _client.getJson(AppConstants.familyActivityEndpoint(familyRef));
   }
@@ -422,12 +443,16 @@ class ApiService {
     return _client.getJson(AppConstants.categoriesEndpoint);
   }
 
-  Future<Map<String, dynamic>> listDocuments({String? cursor}) {
+  Future<Map<String, dynamic>> listDocuments({
+    String? cursor,
+    String? familyRef,
+  }) {
     return _client.getJson(
       AppConstants.documentsEndpoint,
       query: {
-        'limit': '20',
+        'limit': '50',
         if (cursor != null) 'cursor': cursor,
+        if (familyRef != null) 'family_reference_number': familyRef,
       },
     );
   }
@@ -511,8 +536,46 @@ class ApiService {
     );
   }
 
-  Future<Map<String, dynamic>> listDeletedDocuments() {
-    return _client.getJson(AppConstants.documentsDeletedEndpoint);
+  Future<Map<String, dynamic>> listDeletedDocuments({String? familyRef}) {
+    return _client.getJson(
+      AppConstants.documentsDeletedEndpoint,
+      query: {
+        if (familyRef != null) 'family_reference_number': familyRef,
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> getSubscription() {
+    return _client.getJson(AppConstants.subscriptionEndpoint);
+  }
+
+  Future<Map<String, dynamic>> cancelSubscription({String? subscriptionRef}) {
+    return _client.postJson(
+      AppConstants.subscriptionCancelEndpoint,
+      body: {
+        if (subscriptionRef != null)
+          'subscription_reference_number': subscriptionRef,
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> renewSubscription() {
+    return _client.postJson(AppConstants.subscriptionRenewEndpoint, body: {});
+  }
+
+  Future<Map<String, dynamic>> listPlans() {
+    return _client.getJson(AppConstants.subscriptionPlansEndpoint);
+  }
+
+  Future<Map<String, dynamic>> createPayment({required String planRef}) {
+    return _client.postJson(
+      AppConstants.paymentCreateEndpoint,
+      body: {'plan_reference_number': planRef},
+    );
+  }
+
+  Future<Map<String, dynamic>> paymentStatus(String orderRef) {
+    return _client.getJson(AppConstants.paymentStatusEndpoint(orderRef));
   }
 
   Future<Map<String, dynamic>> createShare({
@@ -631,20 +694,20 @@ class ApiService {
 
   Map<String, dynamic> _deviceProofFields() {
     if (session.publicKeyPem == null || session.privateKeyD == null) {
-      return {'device_name': 'Kutumbika Phone'};
+      return {'device_name': 'Paarisetu Phone'};
     }
     final challenge = session.challenge;
     if (challenge == null || challenge.isEmpty) {
       return {
         'public_key': session.publicKeyPem,
-        'device_name': 'Kutumbika Phone',
+        'device_name': 'Paarisetu Phone',
       };
     }
     return {
       'public_key': session.publicKeyPem,
       'device_signature':
           DeviceCrypto.signChallenge(session.privateKeyD!, challenge),
-      'device_name': 'Kutumbika Phone',
+      'device_name': 'Paarisetu Phone',
     };
   }
 

@@ -28,7 +28,7 @@ class _DeviceRegisterScreenState extends State<DeviceRegisterScreen> {
           challengeRef: widget.result.challengeReferenceNumber,
         );
       }
-      final result = await api.completeDeviceLogin(deviceName: 'Kutumbika Phone');
+      final result = await api.completeDeviceLogin(deviceName: 'Paarisetu Phone');
       if (!mounted) return;
       await goAfterLogin(
         context,

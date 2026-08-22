@@ -56,12 +56,8 @@ class _PasswordScreenState extends State<PasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        title: Text(widget.hasPassword ? 'Change password' : 'Create password'),
-        backgroundColor: AppColors.logoBlack,
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: AppColors.cream,
+      appBar: navyAppBar(widget.hasPassword ? 'Change password' : 'Create password'),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [

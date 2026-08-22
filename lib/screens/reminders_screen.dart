@@ -44,12 +44,8 @@ class _RemindersScreenState extends State<RemindersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        title: const Text('Reminders'),
-        backgroundColor: AppColors.logoBlack,
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: AppColors.cream,
+      appBar: navyAppBar('Reminders'),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.primaryDarkBlue,
         onPressed: () {

@@ -95,11 +95,9 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        title: Text(widget.reminderRef == null ? 'New reminder' : 'Reminder'),
-        backgroundColor: AppColors.logoBlack,
-        foregroundColor: Colors.white,
+      backgroundColor: AppColors.cream,
+      appBar: navyAppBar(
+        widget.reminderRef == null ? 'New reminder' : 'Reminder',
         actions: [
           if (widget.reminderRef != null)
             IconButton(onPressed: _delete, icon: const Icon(Icons.delete)),
@@ -130,17 +128,22 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
               if (picked != null) setState(() => _time = picked);
             },
           ),
-          DropdownButtonFormField<String>(
-            value: _repeat,
-            items: const [
-              DropdownMenuItem(value: 'NONE', child: Text('Does not repeat')),
-              DropdownMenuItem(value: 'DAILY', child: Text('Daily')),
-              DropdownMenuItem(value: 'WEEKLY', child: Text('Weekly')),
-              DropdownMenuItem(value: 'MONTHLY', child: Text('Monthly')),
-              DropdownMenuItem(value: 'YEARLY', child: Text('Yearly')),
-            ],
-            onChanged: (v) => setState(() => _repeat = v ?? 'NONE'),
+          InputDecorator(
             decoration: fieldDecoration(hint: 'Repeat'),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _repeat,
+                isExpanded: true,
+                items: const [
+                  DropdownMenuItem(value: 'NONE', child: Text('Does not repeat')),
+                  DropdownMenuItem(value: 'DAILY', child: Text('Daily')),
+                  DropdownMenuItem(value: 'WEEKLY', child: Text('Weekly')),
+                  DropdownMenuItem(value: 'MONTHLY', child: Text('Monthly')),
+                  DropdownMenuItem(value: 'YEARLY', child: Text('Yearly')),
+                ],
+                onChanged: (v) => setState(() => _repeat = v ?? 'NONE'),
+              ),
+            ),
           ),
           const SizedBox(height: 16),
           AppTextField(controller: _notes, label: 'Notes'),

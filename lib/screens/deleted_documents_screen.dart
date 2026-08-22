@@ -26,7 +26,9 @@ class _DeletedDocumentsScreenState extends State<DeletedDocumentsScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
-      final data = await ApiService.instance.listDeletedDocuments();
+      final data = await ApiService.instance.listDeletedDocuments(
+        familyRef: ApiService.instance.session.familyReferenceNumber,
+      );
       setState(() {
         _docs = (data['documents'] as List?) ?? [];
         _loading = false;
@@ -42,12 +44,8 @@ class _DeletedDocumentsScreenState extends State<DeletedDocumentsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        title: const Text('Deleted documents'),
-        backgroundColor: AppColors.logoBlack,
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: AppColors.cream,
+      appBar: navyAppBar('Deleted documents'),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _docs.isEmpty

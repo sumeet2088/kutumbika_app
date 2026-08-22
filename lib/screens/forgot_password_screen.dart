@@ -3,9 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../services/api_service.dart';
 import '../utils/app_colors.dart';
-import '../utils/app_constants.dart';
 import '../utils/error_handler.dart';
+import '../utils/phone.dart';
 import '../utils/ui.dart';
+import 'reset_password_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key, this.mobile = ''});
@@ -17,60 +18,43 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  final _mobile = TextEditingController();
-  final _otp = TextEditingController();
-  final _password = TextEditingController();
-  final _confirm = TextEditingController();
+  final _identity = TextEditingController();
   final _api = ApiService.instance;
-  bool _sent = false;
   bool _loading = false;
 
   @override
   void initState() {
     super.initState();
-    _mobile.text = widget.mobile;
+    _identity.text = widget.mobile;
   }
 
   @override
   void dispose() {
-    _mobile.dispose();
-    _otp.dispose();
-    _password.dispose();
-    _confirm.dispose();
+    _identity.dispose();
     super.dispose();
   }
 
   Future<void> _send() async {
-    if (_mobile.text.length != AppConstants.mobileNumberLength) {
-      ErrorHandler.showError(context, 'Enter a valid mobile number');
+    final value = _identity.text.trim();
+    if (value.isEmpty) {
+      ErrorHandler.showError(context, 'Enter mobile or email');
       return;
     }
     setState(() => _loading = true);
     try {
-      await _api.sendForgotPasswordOTP(_mobile.text);
-      setState(() => _sent = true);
-      if (mounted) ErrorHandler.showSuccess(context, 'OTP sent');
-    } catch (e) {
-      if (mounted) {
-        ErrorHandler.showError(context, ErrorHandler.getErrorMessage(e));
+      final mobile = looksLikeEmail(value) ? '' : (toE164(value) ?? value);
+      if (mobile.isEmpty) {
+        ErrorHandler.showError(context, 'Password reset currently uses the registered mobile number');
+        return;
       }
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _reset() async {
-    setState(() => _loading = true);
-    try {
-      await _api.resetForgotPassword(
-        mobile: _mobile.text,
-        otp: _otp.text,
-        newPassword: _password.text,
-        confirmPassword: _confirm.text,
-      );
+      await _api.sendForgotPasswordOTP(mobile);
       if (!mounted) return;
-      ErrorHandler.showSuccess(context, 'Password reset. Please login.');
-      Navigator.pop(context);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ResetPasswordScreen(mobile: mobile),
+        ),
+      );
     } catch (e) {
       if (mounted) {
         ErrorHandler.showError(context, ErrorHandler.getErrorMessage(e));
@@ -82,61 +66,42 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        title: const Text('Forgot password'),
-        backgroundColor: AppColors.white,
-        foregroundColor: AppColors.primaryDarkBlue,
-        elevation: 0,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(24),
+    return AuthScaffold(
+      child: Column(
         children: [
+          Text('Forgot Password', textAlign: TextAlign.center, style: headingStyle()),
+          const SizedBox(height: 8),
           Text(
-            'Reset with mobile OTP',
-            style: GoogleFonts.inter(color: AppColors.grey),
+            'Enter your registered mobile number or email address to reset your password.',
+            textAlign: TextAlign.center,
+            style: bodyStyle(color: AppColors.navyDeep),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
           AppTextField(
-            controller: _mobile,
-            label: 'Mobile',
-            keyboardType: TextInputType.phone,
-            prefix: Icons.phone,
-            maxLength: AppConstants.mobileNumberLength,
+            controller: _identity,
+            label: 'Mobile or Email',
+            hint: 'Enter mobile or email',
+            keyboardType: TextInputType.emailAddress,
+            maxLength: 64,
           ),
-          if (!_sent) ...[
-            const SizedBox(height: 24),
-            PrimaryButton(label: 'Send OTP', loading: _loading, onPressed: _send),
-          ] else ...[
-            const SizedBox(height: 16),
-            AppTextField(
-              controller: _otp,
-              label: 'OTP',
-              keyboardType: TextInputType.number,
-              maxLength: AppConstants.otpLength,
+          const SizedBox(height: 28),
+          PrimaryButton(
+            label: 'Submit Forgot Password',
+            loading: _loading,
+            onPressed: _send,
+          ),
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Login in',
+              style: GoogleFonts.inter(
+                decoration: TextDecoration.underline,
+                color: AppColors.navy,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            const SizedBox(height: 16),
-            AppTextField(
-              controller: _password,
-              label: 'New password',
-              obscure: true,
-              prefix: Icons.lock,
-            ),
-            const SizedBox(height: 16),
-            AppTextField(
-              controller: _confirm,
-              label: 'Confirm password',
-              obscure: true,
-              prefix: Icons.lock,
-            ),
-            const SizedBox(height: 24),
-            PrimaryButton(
-              label: 'Reset password',
-              loading: _loading,
-              onPressed: _reset,
-            ),
-          ],
+          ),
         ],
       ),
     );

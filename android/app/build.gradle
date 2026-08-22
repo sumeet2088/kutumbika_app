@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace "com.example.kutumbika_app"
+    namespace "com.example.paarisetu_app"
     compileSdk 37
     ndkVersion "28.2.13676358"
 
@@ -14,7 +14,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.kutumbika_app"
+        applicationId "com.example.paarisetu_app"
         minSdk flutter.minSdkVersion
         targetSdk 37
         versionCode flutter.versionCode

@@ -1,6 +1,6 @@
-# Kutumbika Flutter App
+# Paarisetu Flutter App
 
-A Flutter application for Kutumbika - "Everything Your Family Needs. One Secure Place."
+A Flutter application for Paarisetu - "Everything Your Family Needs. One Secure Place."
 
 ## Features Implemented
 
@@ -31,7 +31,7 @@ A Flutter application for Kutumbika - "Everything Your Family Needs. One Secure 
 ## Project Structure
 
 ```
-kutumbika_app/
+paarisetu_app/
 ├── lib/
 │   ├── main.dart              # App entry point
 │   ├── screens/               # Screen widgets
@@ -63,7 +63,7 @@ kutumbika_app/
 ### Installation
 1. Navigate to the project directory:
    ```bash
-   cd kutumbika_app
+   cd paarisetu_app
    ```
 
 2. Install dependencies:
@@ -107,7 +107,7 @@ kutumbika_app/
 6. Navigates to Home Screen (optionally via Create Family Screen)
 
 ### Color Theme
-- The app uses the official Kutumbika color palette extracted from the logo
+- The app uses the official Paarisetu color palette extracted from the logo
 - Primary actions use dark blue (#0D1B2A)
 - Accent elements use gold (#D4AF37)
 - Backgrounds use light grey (#F2F4F7)

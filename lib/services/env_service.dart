@@ -46,7 +46,7 @@ class EnvService {
   int get apiTimeout => int.tryParse(_getEnvVar('API_TIMEOUT', '30')) ?? 30;
 
   // App Configuration
-  String get appName => _getEnvVar('APP_NAME', 'Kutumbika');
+  String get appName => _getEnvVar('APP_NAME', 'Paarisetu');
   String get appVersion => _getEnvVar('APP_VERSION', '1.0.0');
   String get buildNumber => _getEnvVar('BUILD_NUMBER', '1');
 

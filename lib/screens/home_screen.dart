@@ -6,7 +6,12 @@ import '../utils/app_colors.dart';
 import '../utils/error_handler.dart';
 import '../utils/ui.dart';
 import '../widgets/app_logo.dart';
+import 'category_documents_screen.dart';
+import 'family_screen.dart';
 import 'notifications_screen.dart';
+import 'reminders_screen.dart';
+import 'subscription_screen.dart';
+import 'upload_document_screen.dart';
 import 'vault_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -18,7 +23,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? _dashboard;
+  Map<String, dynamic>? _user;
+  Map<String, dynamic>? _subscription;
   List<dynamic> _categories = [];
+  List<dynamic> _reminders = [];
+  String _query = '';
   String? _error;
   bool _loading = true;
 
@@ -37,11 +46,17 @@ class _HomeScreenState extends State<HomeScreen> {
       final api = ApiService.instance;
       final results = await Future.wait([
         api.getDashboard(familyRef: api.session.familyReferenceNumber),
+        api.getUserDetails(),
         api.listCategories(),
+        api.listReminders(filter: 'upcoming'),
+        api.getSubscription(),
       ]);
       setState(() {
         _dashboard = results[0];
-        _categories = (results[1]['categories'] as List?) ?? [];
+        _user = results[1];
+        _categories = (results[2]['categories'] as List?) ?? [];
+        _reminders = (results[3]['reminders'] as List?) ?? [];
+        _subscription = results[4];
         _loading = false;
       });
     } catch (e) {
@@ -55,58 +70,18 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
-      body: Column(
-        children: [
-          _header(),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _load,
-              child: _body(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _header() {
-    return Container(
-      color: AppColors.logoBlack,
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 16, 12),
-          child: Row(
-            children: [
-              const Expanded(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: AppLogo(height: 72),
-                ),
-              ),
-              IconButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const NotificationsScreen()),
-                  );
-                },
-                icon: const Icon(Icons.notifications_none,
-                    color: AppColors.goldYellow),
-              ),
-            ],
-          ),
+      backgroundColor: AppColors.cream,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _load,
+          child: _body(),
         ),
       ),
     );
   }
 
   Widget _body() {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    if (_loading) return const Center(child: CircularProgressIndicator(color: AppColors.gold));
     if (_error != null) {
       return ListView(
         children: [
@@ -116,117 +91,228 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
     final d = _dashboard ?? {};
+    final usage = (_subscription?['usage'] as Map?) ?? {};
+    final filtered = _categories.where((c) {
+      if (_query.isEmpty) return true;
+      return '${c['document_name']}'.toLowerCase().contains(_query.toLowerCase());
+    }).toList();
+    final unread = d['notifications_unread'] ?? 0;
+
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       children: [
-        Text(
-          'Welcome back',
-          style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: AppColors.primaryDarkBlue,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
+        Row(
           children: [
-            _stat('Documents', '${d['documents_active'] ?? 0}', Icons.folder),
-            _stat('Upcoming', '${d['reminders_upcoming'] ?? 0}', Icons.alarm),
-            _stat('Overdue', '${d['reminders_overdue'] ?? 0}', Icons.warning),
-            _stat('Unread', '${d['notifications_unread'] ?? 0}',
-                Icons.notifications),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Hello, ${displayName(_user)}', style: headingStyle(size: 24)),
+                  Text('Welcome to Paarisetu', style: bodyStyle(color: AppColors.grey)),
+                ],
+              ),
+            ),
+            const AppLogo(kind: LogoKind.icon, height: 42),
+            const SizedBox(width: 8),
+            IconButton(
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+              },
+              icon: Badge(
+                isLabelVisible: unread is int && unread > 0,
+                label: Text('$unread'),
+                child: const Icon(Icons.notifications_none, color: AppColors.navy),
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: 24),
-        Text(
-          'Document categories',
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w600,
-            color: AppColors.primaryDarkBlue,
+        const SizedBox(height: 16),
+        TextField(
+          onChanged: (v) => setState(() => _query = v),
+          decoration: fieldDecoration(hint: 'Search documents, categories...', prefix: Icons.search),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
+          decoration: BoxDecoration(
+            color: AppColors.navy,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Row(
+            children: [
+              _navyStat(Icons.description_outlined, '${d['documents_active'] ?? 0}', 'Documents'),
+              _navyStat(Icons.groups_outlined, '${d['family_member_count'] ?? 0}', 'Family'),
+              _navyStat(
+                Icons.cloud_outlined,
+                bytesLabel(usage['storage_used_bytes'] ?? 0),
+                'Storage used',
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 12),
-        if (_categories.isEmpty)
+        const SizedBox(height: 20),
+        GridView.count(
+          crossAxisCount: 3,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.95,
+          children: [
+            _tile(Icons.lock_outline, 'Vault', () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const VaultScreen()));
+            }),
+            _tile(Icons.people_outline, 'Family', () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const FamilyScreen()));
+            }),
+            _tile(Icons.workspace_premium_outlined, 'Plan', () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionScreen()));
+            }),
+            _tile(Icons.medical_services_outlined, 'Medical', () => _openCategory('Medical')),
+            _tile(Icons.shield_outlined, 'Insurance', () => _openCategory('Insurance')),
+            _tile(Icons.more_horiz, 'More', () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const VaultScreen()));
+            }),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Text('Notifications & Reminders', style: bodyStyle(weight: FontWeight.w700, size: 16)),
+            const Spacer(),
+            TextButton(
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const RemindersScreen()));
+              },
+              child: const Text('View all'),
+            ),
+          ],
+        ),
+        if (_reminders.isEmpty)
+          AppCard(child: Text('No upcoming reminders', style: bodyStyle(color: AppColors.grey)))
+        else
+          ..._reminders.take(3).map((r) {
+            final map = r as Map;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: AppCard(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFE8E8),
+                        borderRadius: BorderRadius.circular(21),
+                      ),
+                      child: const Icon(Icons.warning_amber, color: AppColors.error),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('${map['title']}', style: bodyStyle(weight: FontWeight.w700)),
+                          Text('${map['reminder_date'] ?? ''}', style: bodyStyle(size: 12, color: AppColors.error)),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFE8E8),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text('Urgent', style: bodyStyle(size: 11, color: AppColors.error, weight: FontWeight.w700)),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        const SizedBox(height: 8),
+        Text('Categories', style: bodyStyle(weight: FontWeight.w700, size: 16)),
+        const SizedBox(height: 10),
+        if (filtered.isEmpty)
           const EmptyState(message: 'No categories yet')
         else
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _categories.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.4,
-            ),
-            itemBuilder: (context, i) {
-              final cat = _categories[i] as Map;
-              return InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const VaultScreen()),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+          ...filtered.map((cat) {
+            final map = cat as Map;
+            return ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const CircleAvatar(
+                backgroundColor: AppColors.navy,
+                child: Icon(Icons.folder_outlined, color: AppColors.gold),
+              ),
+              title: Text('${map['document_name']}', style: bodyStyle(weight: FontWeight.w600)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CategoryDocumentsScreen(
+                      categoryRef: '${map['document_category_reference_number']}',
+                      categoryName: '${map['document_name']}',
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.description,
-                          color: AppColors.secondaryBlue),
-                      const Spacer(),
-                      Text(
-                        '${cat['document_name'] ?? 'Category'}',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primaryDarkBlue,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
+                );
+              },
+            );
+          }),
+        const SizedBox(height: 12),
+        PrimaryButton(
+          label: 'Upload Document',
+          onPressed: () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const UploadDocumentScreen()));
+          },
+        ),
       ],
     );
   }
 
-  Widget _stat(String label, String value, IconData icon) {
-    return SizedBox(
-      width: (MediaQuery.sizeOf(context).width - 44) / 2,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: AppColors.goldYellow),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(value,
-                    style: GoogleFonts.inter(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryDarkBlue)),
-                Text(label,
-                    style: GoogleFonts.inter(
-                        fontSize: 12, color: AppColors.grey)),
-              ],
+  void _openCategory(String name) {
+    for (final cat in _categories) {
+      final map = cat as Map;
+      if ('${map['document_name']}'.toLowerCase().contains(name.toLowerCase())) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CategoryDocumentsScreen(
+              categoryRef: '${map['document_category_reference_number']}',
+              categoryName: '${map['document_name']}',
             ),
+          ),
+        );
+        return;
+      }
+    }
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const VaultScreen()));
+  }
+
+  Widget _navyStat(IconData icon, String value, String label) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, color: AppColors.gold),
+          const SizedBox(height: 8),
+          Text(value, style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+          Text(label, style: GoogleFonts.inter(color: Colors.white70, fontSize: 11)),
+        ],
+      ),
+    );
+  }
+
+  Widget _tile(IconData icon, String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: AppCard(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: AppColors.navy, size: 28),
+            const SizedBox(height: 8),
+            Text(label, style: bodyStyle(size: 12, weight: FontWeight.w600)),
           ],
         ),
       ),

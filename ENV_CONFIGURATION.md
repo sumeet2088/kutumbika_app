@@ -26,7 +26,7 @@ This Flutter app uses environment variables for configuration management using t
 - `API_TIMEOUT`: API request timeout in seconds (default: `30`)
 
 ### App Configuration
-- `APP_NAME`: Application name (default: `Kutumbika`)
+- `APP_NAME`: Application name (default: `Paarisetu`)
 - `APP_VERSION`: Current app version (default: `1.0.0`)
 - `BUILD_NUMBER`: Build number (default: `1`)
 

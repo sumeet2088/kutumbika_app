@@ -105,12 +105,8 @@ class _UploadDocumentScreenState extends State<UploadDocumentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        title: const Text('Upload document'),
-        backgroundColor: AppColors.logoBlack,
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: AppColors.cream,
+      appBar: navyAppBar('Upload Document'),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
@@ -125,17 +121,22 @@ class _UploadDocumentScreenState extends State<UploadDocumentScreen> {
           const SizedBox(height: 16),
           const Text('Category'),
           const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            value: _categoryRef,
-            items: [
-              for (final c in _categories)
-                DropdownMenuItem(
-                  value: '${(c as Map)['document_category_reference_number']}',
-                  child: Text('${c['document_name']}'),
-                ),
-            ],
-            onChanged: (v) => setState(() => _categoryRef = v),
-            decoration: fieldDecoration(),
+          InputDecorator(
+            decoration: fieldDecoration(label: 'Category'),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _categoryRef,
+                isExpanded: true,
+                items: [
+                  for (final c in _categories)
+                    DropdownMenuItem(
+                      value: '${(c as Map)['document_category_reference_number']}',
+                      child: Text('${c['document_name']}'),
+                    ),
+                ],
+                onChanged: (v) => setState(() => _categoryRef = v),
+              ),
+            ),
           ),
           const SizedBox(height: 24),
           PrimaryButton(label: 'Upload', loading: _loading, onPressed: _upload),

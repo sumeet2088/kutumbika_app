@@ -44,11 +44,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        title: const Text('Notifications'),
-        backgroundColor: AppColors.logoBlack,
-        foregroundColor: Colors.white,
+      backgroundColor: AppColors.cream,
+      appBar: navyAppBar(
+        'Notifications',
         actions: [
           TextButton(
             onPressed: () async {

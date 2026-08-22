@@ -4,10 +4,11 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../services/api_service.dart';
 import '../utils/app_colors.dart';
-import '../utils/app_constants.dart';
 import '../utils/error_handler.dart';
+import '../utils/phone.dart';
 import '../utils/ui.dart';
 import '../widgets/app_logo.dart';
+import '../widgets/phone_field.dart';
 import 'forgot_password_screen.dart';
 import 'otp_verification_screen.dart';
 
@@ -20,25 +21,42 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _mobileController = TextEditingController();
+  final _identityController = TextEditingController();
   final _passwordController = TextEditingController();
   final _api = ApiService.instance;
   bool _loading = false;
   bool _obscure = true;
+  bool _otpMode = false;
+  bool _useEmail = false;
+  DialCountry _country = defaultDialCountry;
 
   @override
   void dispose() {
-    _mobileController.dispose();
+    _identityController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  String? _mobileError(String? value) {
-    if (value == null || value.isEmpty) return 'Please enter mobile number';
-    if (value.length != AppConstants.mobileNumberLength) {
-      return 'Enter a ${AppConstants.mobileNumberLength}-digit mobile number';
+  bool get _isEmail => _useEmail || looksLikeEmail(_identityController.text);
+
+  String? _identityError(String? value) {
+    if (value == null || value.isEmpty) {
+      return _useEmail ? 'Enter email' : 'Enter mobile number';
+    }
+    if (_useEmail || looksLikeEmail(value)) {
+      if (!looksLikeEmail(value)) return 'Enter a valid email';
+      return null;
+    }
+    if (toE164(value, country: _country) == null) {
+      return 'Use ${_country.nationalMin}–${_country.nationalMax} digits or +E.164';
     }
     return null;
+  }
+
+  Map<String, String> get _identity {
+    final value = _identityController.text.trim();
+    if (_useEmail || looksLikeEmail(value)) return {'email': value};
+    return {'mobile': toE164(value, country: _country) ?? value};
   }
 
   Future<void> _run(Future<void> Function() action) async {
@@ -54,23 +72,27 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _sendOtp() async {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    await _run(() async {
-      await _api.sendOTP(mobile: _mobileController.text);
-      if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              OTPVerificationScreen(mobile: _mobileController.text),
-        ),
-      );
-    });
-  }
-
-  Future<void> _passwordLogin() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_otpMode) {
+      await _run(() async {
+        await _api.sendOTP(
+          mobile: _identity['mobile'],
+          email: _identity['email'],
+        );
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OTPVerificationScreen(
+              mobile: _identity['mobile'] ?? '',
+              email: _identity['email'],
+            ),
+          ),
+        );
+      });
+      return;
+    }
     if (_passwordController.text.isEmpty) {
       ErrorHandler.showError(context, 'Enter your password');
       return;
@@ -78,7 +100,8 @@ class _LoginScreenState extends State<LoginScreen> {
     await _run(() async {
       final result = await _api.loginWithPassword(
         password: _passwordController.text,
-        mobile: _mobileController.text,
+        mobile: _identity['mobile'],
+        email: _identity['email'],
       );
       if (!mounted) return;
       await goAfterLogin(context, result);
@@ -86,8 +109,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _oauth(String provider) async {
-    final mobile = _mobileController.text.trim();
-    final subject = mobile.isEmpty ? 'kutumbika-user' : mobile;
+    final identity = _identityController.text.trim();
+    final subject = identity.isEmpty ? 'paarisetu-user' : identity;
     await _run(() async {
       final result = await _api.loginWithOAuth(
         provider: provider,
@@ -101,166 +124,154 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light.copyWith(
-        statusBarColor: AppColors.logoBlack,
-      ),
+      value: SystemUiOverlayStyle.dark.copyWith(statusBarColor: Colors.transparent),
       child: Scaffold(
-        backgroundColor: AppColors.logoBlack,
-        body: Column(
-          children: [
-            const SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(32, 16, 32, 24),
-                child: Center(child: AppLogo(height: 160)),
+        backgroundColor: AppColors.cream,
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(28, 16, 28, 28),
+            children: [
+              const SizedBox(height: 12),
+              const Center(child: AppLogo(kind: LogoKind.icon, height: 92)),
+              const SizedBox(height: 20),
+              Text('Welcome Back.', textAlign: TextAlign.center, style: headingStyle()),
+              const SizedBox(height: 6),
+              Text(
+                'Sign in to access your secure family vault.',
+                textAlign: TextAlign.center,
+                style: bodyStyle(size: 14, color: AppColors.navyDeep),
               ),
-            ),
-            Expanded(
-              child: Container(
-                color: AppColors.white,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Login',
-                          style: GoogleFonts.playfairDisplay(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryDarkBlue,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'OTP, password, or social login — same as the gateway.',
+              const SizedBox(height: 28),
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    if (_useEmail)
+                      AppTextField(
+                        controller: _identityController,
+                        label: 'Email',
+                        hint: 'you@example.com',
+                        keyboardType: TextInputType.emailAddress,
+                        validator: _identityError,
+                      )
+                    else
+                      PhoneField(
+                        controller: _identityController,
+                        country: _country,
+                        onCountryChanged: (c) => setState(() => _country = c),
+                      ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _useEmail = !_useEmail;
+                            _identityController.clear();
+                          });
+                        },
+                        child: Text(
+                          _useEmail ? 'Use mobile number' : 'Use email instead',
                           style: GoogleFonts.inter(
-                              fontSize: 13, color: AppColors.grey),
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _social('Google', Icons.g_mobiledata,
-                                  Colors.red, () => _oauth('google')),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _social('Apple', Icons.apple, Colors.black,
-                                  () => _oauth('apple')),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        AppTextField(
-                          controller: _mobileController,
-                          label: 'Mobile Number',
-                          hint: '10-digit mobile',
-                          keyboardType: TextInputType.phone,
-                          prefix: Icons.phone,
-                          maxLength: AppConstants.mobileNumberLength,
-                          validator: _mobileError,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Password',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.primaryDarkBlue,
+                            color: AppColors.navy,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: _obscure,
-                          decoration: fieldDecoration(
-                            hint: 'Optional for OTP login',
-                            prefix: Icons.lock,
-                          ).copyWith(
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscure
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                                color: AppColors.grey,
-                              ),
-                              onPressed: () =>
-                                  setState(() => _obscure = !_obscure),
-                            ),
-                          ),
-                        ),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ForgotPasswordScreen(
-                                    mobile: _mobileController.text,
-                                  ),
+                      ),
+                    ),
+                    if (!_otpMode) ...[
+                      const SizedBox(height: 16),
+                      AppTextField(
+                        controller: _passwordController,
+                        label: 'Password',
+                        hint: 'Password',
+                        obscure: _obscure,
+                        onToggleObscure: () => setState(() => _obscure = !_obscure),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ForgotPasswordScreen(
+                                  mobile: _isEmail
+                                      ? ''
+                                      : (toE164(_identityController.text, country: _country) ??
+                                          _identityController.text),
                                 ),
-                              );
-                            },
-                            child: Text(
-                              'Forgot Password?',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                color: AppColors.secondaryBlue,
                               ),
+                            );
+                          },
+                          child: Text(
+                            'Forgot Password?',
+                            style: GoogleFonts.inter(
+                              decoration: TextDecoration.underline,
+                              color: AppColors.navy,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
-                        PrimaryButton(
-                          label: 'Send OTP',
-                          loading: _loading,
-                          onPressed: _sendOtp,
+                      ),
+                    ] else
+                      const SizedBox(height: 24),
+                    PrimaryButton(
+                      label: _otpMode ? 'Send OTP' : 'Submit',
+                      loading: _loading,
+                      onPressed: _submit,
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        const Expanded(child: Divider(color: AppColors.navy)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text('OR', style: bodyStyle(weight: FontWeight.w600)),
                         ),
-                        const SizedBox(height: 12),
-                        PrimaryButton(
-                          label: 'Login with Password',
-                          loading: _loading,
-                          onPressed: _passwordLogin,
-                        ),
+                        const Expanded(child: Divider(color: AppColors.navy)),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 18),
+                    OutlineActionButton(
+                      label: _otpMode ? 'Login with Password' : 'Login using OTP',
+                      onPressed: () => setState(() => _otpMode = !_otpMode),
+                    ),
+                    const SizedBox(height: 28),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _circle('G', () => _oauth('google')),
+                        const SizedBox(width: 18),
+                        _circle('', () => _oauth('apple'), icon: Icons.apple),
+                        const SizedBox(width: 18),
+                        _circle('f', () => _oauth('facebook')),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _social(
-      String label, IconData icon, Color color, VoidCallback onTap) {
+  Widget _circle(String text, VoidCallback onTap, {IconData? icon}) {
     return InkWell(
       onTap: _loading ? null : onTap,
+      borderRadius: BorderRadius.circular(28),
       child: Container(
-        height: 50,
+        width: 48,
+        height: 48,
+        alignment: Alignment.center,
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.grey.withValues(alpha: 0.3)),
-          borderRadius: BorderRadius.circular(12),
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.navy, width: 1.2),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontWeight: FontWeight.w500,
-                color: AppColors.primaryDarkBlue,
-              ),
-            ),
-          ],
-        ),
+        child: icon == null
+            ? Text(text, style: headingStyle(size: 20))
+            : Icon(icon, color: AppColors.navy),
       ),
     );
   }

@@ -47,6 +47,10 @@ class AppConstants {
       '$apiPrefix/family/$familyRef/invitations';
   static String familyMembersEndpoint(String familyRef) =>
       '$apiPrefix/family/$familyRef/members';
+  static String familyMemberRoleEndpoint(String familyRef, String memberRef) =>
+      '$apiPrefix/family/$familyRef/members/$memberRef/role';
+  static String familyMemberRemoveEndpoint(String familyRef, String memberRef) =>
+      '$apiPrefix/family/$familyRef/members/$memberRef/remove';
   static String familyActivityEndpoint(String familyRef) =>
       '$apiPrefix/family/$familyRef/activity';
   static String familyUpdateEndpoint(String familyRef) =>
@@ -96,11 +100,21 @@ class AppConstants {
       '$apiPrefix/notifications/$id/read';
 
   static String get dashboardEndpoint => '$apiPrefix/dashboard/';
+  static String get subscriptionEndpoint => '$apiPrefix/subscription/';
+  static String get subscriptionCancelEndpoint => '$apiPrefix/subscription/cancel';
+  static String get subscriptionRenewEndpoint => '$apiPrefix/subscription/renew';
+  static String get subscriptionPlansEndpoint => '$apiPrefix/subscription/plans/';
+  static String get paymentCreateEndpoint => '$apiPrefix/subscription/payments/create';
+  static String paymentStatusEndpoint(String orderRef) =>
+      '$apiPrefix/subscription/payments/$orderRef';
 
-  static const String logoAsset = 'assets/logo/kutumbika_logo.jpg';
+  static const String logoAsset = 'assets/logo/paarisetu_logo.png';
+  static const String logoIconAsset = 'assets/logo/paarisetu_icon.png';
   static String get appName => _env.appName;
   static const String appTagline =
-      'Everything Your Family Needs. One Secure Place.';
+      'Connecting Generations. Protecting Legacies.';
+  static const String appSecureTagline =
+      'Your Family. Your Documents. Always Secure.';
   static String get appVersion => _env.appVersion;
   static String get buildNumber => _env.buildNumber;
 
