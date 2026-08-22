@@ -386,6 +386,10 @@ class ApiService {
     return _client.getJson(AppConstants.familyPendingInvitesEndpoint);
   }
 
+  Future<Map<String, dynamic>> listMyFamilies() {
+    return _client.getJson(AppConstants.familyMineEndpoint);
+  }
+
   Future<Map<String, dynamic>> acceptInvitation(String invitationRef) async {
     final data = await _client.postJson(
       AppConstants.familyAcceptInviteEndpoint(invitationRef),
@@ -436,7 +440,10 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> listFamilyActivity(String familyRef) {
-    return _client.getJson(AppConstants.familyActivityEndpoint(familyRef));
+    return _client.getJson(
+      AppConstants.familyActivityEndpoint(familyRef),
+      query: {'limit': '50'},
+    );
   }
 
   Future<Map<String, dynamic>> listCategories() {
@@ -464,6 +471,7 @@ class ApiService {
     String? title,
     String? description,
     String? remarks,
+    String? documentType,
   }) {
     return _client.postMultipart(
       AppConstants.documentsUploadEndpoint,
@@ -473,6 +481,7 @@ class ApiService {
         if (title != null) 'title': title,
         if (description != null) 'description': description,
         if (remarks != null) 'remarks': remarks,
+        if (documentType != null) 'document_type': documentType,
       },
       files: {'file': file},
     );
@@ -545,13 +554,22 @@ class ApiService {
     );
   }
 
-  Future<Map<String, dynamic>> getSubscription() {
-    return _client.getJson(AppConstants.subscriptionEndpoint);
+  Future<Map<String, dynamic>> getSubscription({String? familyRef}) {
+    return _client.getJson(
+      AppConstants.subscriptionEndpoint,
+      query: {
+        if (familyRef != null) 'family_reference_number': familyRef,
+      },
+    );
   }
 
   Future<Map<String, dynamic>> cancelSubscription({String? subscriptionRef}) {
     return _client.postJson(
       AppConstants.subscriptionCancelEndpoint,
+      query: {
+        if (session.familyReferenceNumber != null)
+          'family_reference_number': session.familyReferenceNumber!,
+      },
       body: {
         if (subscriptionRef != null)
           'subscription_reference_number': subscriptionRef,
@@ -560,7 +578,14 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> renewSubscription() {
-    return _client.postJson(AppConstants.subscriptionRenewEndpoint, body: {});
+    return _client.postJson(
+      AppConstants.subscriptionRenewEndpoint,
+      query: {
+        if (session.familyReferenceNumber != null)
+          'family_reference_number': session.familyReferenceNumber!,
+      },
+      body: {},
+    );
   }
 
   Future<Map<String, dynamic>> listPlans() {
@@ -570,7 +595,11 @@ class ApiService {
   Future<Map<String, dynamic>> createPayment({required String planRef}) {
     return _client.postJson(
       AppConstants.paymentCreateEndpoint,
-      body: {'plan_reference_number': planRef},
+      body: {
+        'plan_reference_number': planRef,
+        if (session.familyReferenceNumber != null)
+          'family_reference_number': session.familyReferenceNumber,
+      },
     );
   }
 
@@ -678,6 +707,19 @@ class ApiService {
     );
   }
 
+  Future<Map<String, dynamic>> searchVault({
+    required String query,
+    String? familyRef,
+  }) {
+    return _client.getJson(
+      AppConstants.searchEndpoint,
+      query: {
+        'q': query,
+        if (familyRef != null) 'family_reference_number': familyRef,
+      },
+    );
+  }
+
   Future<Map<String, dynamic>> getDashboard({String? familyRef}) async {
     final data = await _client.getJson(
       AppConstants.dashboardEndpoint,
@@ -728,6 +770,68 @@ class ApiService {
       session.userReferenceNumber = result.userReferenceNumber;
     }
     return result;
+  }
+
+  Future<Map<String, dynamic>> listVehicles({String? familyRef}) {
+    return _client.getJson(
+      AppConstants.vehiclesEndpoint,
+      query: {
+        if (familyRef != null) 'family_reference_number': familyRef,
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> createVehicle({
+    required String familyRef,
+    String? make,
+    String? model,
+    String? registrationNumber,
+    int? year,
+    String? rcDocumentRef,
+  }) {
+    return _client.postJson(
+      AppConstants.vehiclesEndpoint,
+      body: {
+        'family_reference_number': familyRef,
+        if (make != null) 'make': make,
+        if (model != null) 'model': model,
+        if (registrationNumber != null) 'registration_number': registrationNumber,
+        if (year != null) 'year': year,
+        if (rcDocumentRef != null) 'rc_document_reference_number': rcDocumentRef,
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> listInsurance({String? familyRef}) {
+    return _client.getJson(
+      AppConstants.insuranceEndpoint,
+      query: {
+        if (familyRef != null) 'family_reference_number': familyRef,
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> createInsurance({
+    required String familyRef,
+    String? provider,
+    String? policyNumber,
+    String? startDate,
+    String? expiryDate,
+    String? vehicleRef,
+    String? documentRef,
+  }) {
+    return _client.postJson(
+      AppConstants.insuranceEndpoint,
+      body: {
+        'family_reference_number': familyRef,
+        if (provider != null) 'provider': provider,
+        if (policyNumber != null) 'policy_number': policyNumber,
+        if (startDate != null) 'start_date': startDate,
+        if (expiryDate != null) 'expiry_date': expiryDate,
+        if (vehicleRef != null) 'vehicle_reference_number': vehicleRef,
+        if (documentRef != null) 'document_reference_number': documentRef,
+      },
+    );
   }
 
   String _platformName() {

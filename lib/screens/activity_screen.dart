@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../services/api_service.dart';
 import '../utils/app_colors.dart';
@@ -25,7 +24,10 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
   Future<void> _load() async {
     try {
-      final data = await ApiService.instance.getUserActivity();
+      final familyRef = ApiService.instance.session.familyReferenceNumber;
+      final data = familyRef != null
+          ? await ApiService.instance.listFamilyActivity(familyRef)
+          : await ApiService.instance.getUserActivity();
       setState(() {
         _items = (data['activities'] as List?) ?? [];
         _loading = false;
@@ -44,22 +46,38 @@ class _ActivityScreenState extends State<ActivityScreen> {
       backgroundColor: AppColors.cream,
       appBar: navyAppBar('Activity'),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
           : _items.isEmpty
               ? const EmptyState(message: 'No activity yet')
-              : ListView.builder(
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                   itemCount: _items.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, i) {
                     final a = _items[i] as Map;
-                    return ListTile(
-                      title: Text('${a['action']} ${a['entity_type']}'),
-                      subtitle: Text(
-                        '${a['created_at'] ?? ''}',
-                        style: GoogleFonts.inter(fontSize: 12),
+                    return AppCard(
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleAvatar(
+                          backgroundColor: AppColors.bannerBlue,
+                          child: Icon(
+                            '${a['entity_type']}' == 'FAMILY' ? Icons.people_outline : Icons.description_outlined,
+                            color: AppColors.sky,
+                          ),
+                        ),
+                        title: Text(_title(a), style: bodyStyle(weight: FontWeight.w600)),
+                        subtitle: Text(relativeTime(a['created_at']), style: bodyStyle(size: 12, color: AppColors.grey)),
                       ),
                     );
                   },
                 ),
     );
+  }
+
+  String _title(Map a) {
+    if (a['title'] != null && '${a['title']}'.isNotEmpty) return '${a['title']}';
+    final action = '${a['action']}'.replaceAll('_', ' ').toLowerCase();
+    final entity = '${a['entity_type']}'.replaceAll('_', ' ').toLowerCase();
+    return '$action $entity';
   }
 }

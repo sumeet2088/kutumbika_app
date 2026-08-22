@@ -16,6 +16,7 @@ class FamilyScreen extends StatefulWidget {
 
 class _FamilyScreenState extends State<FamilyScreen> {
   List<dynamic> _pending = [];
+  List<dynamic> _families = [];
   Map<String, dynamic>? _family;
   bool _loading = true;
 
@@ -30,11 +31,13 @@ class _FamilyScreenState extends State<FamilyScreen> {
     try {
       final api = ApiService.instance;
       final pending = await api.listPendingInvitations();
+      final mine = await api.listMyFamilies().catchError((_) => {'families': []});
       Map<String, dynamic>? family;
       final ref = api.session.familyReferenceNumber;
       if (ref != null) family = await api.getFamilyDetails(ref);
       setState(() {
         _pending = (pending['invitations'] as List?) ?? [];
+        _families = (mine['families'] as List?) ?? [];
         _family = family;
         _loading = false;
       });
@@ -48,7 +51,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.cream,
-      appBar: navyAppBar('Family', implyLeading: false),
+      appBar: navyAppBar('Family'),
       body: RefreshIndicator(
         onRefresh: _load,
         child: _loading
@@ -56,7 +59,40 @@ class _FamilyScreenState extends State<FamilyScreen> {
             : ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  if (_family != null)
+                  if (_families.isNotEmpty)
+                    ..._families.map((f) {
+                      final map = f as Map;
+                      final ref = '${map['family_reference_number']}';
+                      final current = ref == ApiService.instance.session.familyReferenceNumber;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: AppCard(
+                          child: ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const CircleAvatar(
+                              backgroundColor: AppColors.navy,
+                              child: Icon(Icons.home, color: AppColors.gold),
+                            ),
+                            title: Text('${map['family_name']}', style: bodyStyle(weight: FontWeight.w700)),
+                            subtitle: Text(
+                              '${map['my_role']}${current ? ' · current' : ''}${map['plan_name'] != null ? ' · ${map['plan_name']}' : ''}',
+                            ),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () async {
+                              await ApiService.instance.session.saveFamily(ref);
+                              if (!context.mounted) return;
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => FamilyDetailScreen(familyRef: ref),
+                                ),
+                              ).then((_) => _load());
+                            },
+                          ),
+                        ),
+                      );
+                    })
+                  else if (_family != null)
                     AppCard(
                       child: ListTile(
                         contentPadding: EdgeInsets.zero,

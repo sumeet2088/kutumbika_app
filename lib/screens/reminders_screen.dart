@@ -46,7 +46,9 @@ class _RemindersScreenState extends State<RemindersScreen> {
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: navyAppBar('Reminders'),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: AppChromeScope.embedded(context)
+          ? null
+          : FloatingActionButton(
         backgroundColor: AppColors.primaryDarkBlue,
         onPressed: () {
           Navigator.push(

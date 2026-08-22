@@ -134,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 12),
               const Center(child: AppLogo(kind: LogoKind.icon, height: 92)),
               const SizedBox(height: 20),
-              Text('Welcome Back.', textAlign: TextAlign.center, style: headingStyle()),
+              Text('Welcome to Paarisetu.', textAlign: TextAlign.center, style: headingStyle()),
               const SizedBox(height: 6),
               Text(
                 'Sign in to access your secure family vault.',

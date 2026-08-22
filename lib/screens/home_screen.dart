@@ -3,15 +3,14 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../services/api_service.dart';
 import '../utils/app_colors.dart';
-import '../utils/error_handler.dart';
+import '../utils/modules.dart';
 import '../utils/ui.dart';
-import '../widgets/app_logo.dart';
-import 'category_documents_screen.dart';
+import 'activity_screen.dart';
+import 'create_family_screen.dart';
+import 'document_detail_screen.dart';
 import 'family_screen.dart';
-import 'notifications_screen.dart';
 import 'reminders_screen.dart';
 import 'subscription_screen.dart';
-import 'upload_document_screen.dart';
 import 'vault_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -24,11 +23,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? _dashboard;
   Map<String, dynamic>? _user;
-  Map<String, dynamic>? _subscription;
-  List<dynamic> _categories = [];
-  List<dynamic> _reminders = [];
-  String _query = '';
-  String? _error;
+  List<dynamic> _families = [];
   bool _loading = true;
 
   @override
@@ -38,284 +33,409 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    setState(() => _loading = true);
+    final api = ApiService.instance;
+    Map<String, dynamic>? dashboard;
+    Map<String, dynamic>? user;
+    List<dynamic> families = [];
     try {
-      final api = ApiService.instance;
-      final results = await Future.wait([
-        api.getDashboard(familyRef: api.session.familyReferenceNumber),
-        api.getUserDetails(),
-        api.listCategories(),
-        api.listReminders(filter: 'upcoming'),
-        api.getSubscription(),
-      ]);
-      setState(() {
-        _dashboard = results[0];
-        _user = results[1];
-        _categories = (results[2]['categories'] as List?) ?? [];
-        _reminders = (results[3]['reminders'] as List?) ?? [];
-        _subscription = results[4];
-        _loading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = ErrorHandler.getErrorMessage(e);
-        _loading = false;
-      });
+      user = await api.getUserDetails();
+    } catch (_) {}
+    try {
+      dashboard = await api.getDashboard(familyRef: api.session.familyReferenceNumber);
+    } catch (_) {
+      dashboard = {};
     }
+    try {
+      families = ((await api.listMyFamilies())['families'] as List?) ?? [];
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() {
+      _user = user;
+      _dashboard = dashboard;
+      _families = families;
+      _loading = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.cream,
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _load,
-          child: _body(),
-        ),
+      backgroundColor: AppColors.white,
+      body: RefreshIndicator(
+        color: AppColors.navy,
+        onRefresh: _load,
+        child: _loading
+            ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
+            : _body(),
       ),
     );
   }
 
   Widget _body() {
-    if (_loading) return const Center(child: CircularProgressIndicator(color: AppColors.gold));
-    if (_error != null) {
-      return ListView(
-        children: [
-          const SizedBox(height: 80),
-          EmptyState(message: _error!, icon: Icons.error_outline),
-        ],
-      );
-    }
     final d = _dashboard ?? {};
-    final usage = (_subscription?['usage'] as Map?) ?? {};
-    final filtered = _categories.where((c) {
-      if (_query.isEmpty) return true;
-      return '${c['document_name']}'.toLowerCase().contains(_query.toLowerCase());
-    }).toList();
-    final unread = d['notifications_unread'] ?? 0;
+    final summary = (d['vault_summary'] as Map?) ?? {};
+    final rawModules = supportedHomeModules((d['quick_access'] as List?) ?? []);
+    final modules = rawModules.isEmpty ? defaultHomeModules() : rawModules;
+    final homeTiles = modules.where((m) => '${m['placement']}' != 'MORE').toList();
+    final extras = [
+      ...modules.where((m) => '${m['placement']}' == 'MORE'),
+      if (homeTiles.length > homeTileLimit) ...homeTiles.sublist(homeTileLimit),
+    ];
+    final visible = homeTiles.take(homeTileLimit).toList();
+    final activity = (d['recent_activity'] as List?) ?? [];
+    final hasFamily = _families.isNotEmpty || '${d['family_reference_number'] ?? ''}'.isNotEmpty;
+    final first = displayFirstName(_user);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 96),
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Hello, ${displayName(_user)}', style: headingStyle(size: 24)),
-                  Text('Welcome to Paarisetu', style: bodyStyle(color: AppColors.grey)),
-                ],
-              ),
-            ),
-            const AppLogo(kind: LogoKind.icon, height: 42),
-            const SizedBox(width: 8),
-            IconButton(
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
-              },
-              icon: Badge(
-                isLabelVisible: unread is int && unread > 0,
-                label: Text('$unread'),
-                child: const Icon(Icons.notifications_none, color: AppColors.navy),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          onChanged: (v) => setState(() => _query = v),
-          decoration: fieldDecoration(hint: 'Search documents, categories...', prefix: Icons.search),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
-          decoration: BoxDecoration(
+        Text(
+          'Welcome back, $first! 👋',
+          style: GoogleFonts.inter(
+            fontSize: 24,
+            fontWeight: FontWeight.w800,
             color: AppColors.navy,
-            borderRadius: BorderRadius.circular(18),
+            height: 1.2,
           ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          hasFamily
+              ? "Your family's legacy is safe and organized."
+              : 'Create your family vault to start organizing documents, members, and more.',
+          style: GoogleFonts.inter(fontSize: 14, color: AppColors.grey, height: 1.35),
+        ),
+        if (_families.length > 1) ...[
+          const SizedBox(height: 14),
+          DropdownButtonFormField<String>(
+            value: _currentFamilyRef(),
+            decoration: fieldDecoration(hint: 'Family', prefix: Icons.home_outlined),
+            items: _families.map((f) {
+              final map = f as Map;
+              return DropdownMenuItem(
+                value: '${map['family_reference_number']}',
+                child: Text('${map['family_name']} · ${map['my_role']}'),
+              );
+            }).toList(),
+            onChanged: (ref) async {
+              if (ref == null) return;
+              await ApiService.instance.session.saveFamily(ref);
+              await _load();
+            },
+          ),
+        ],
+        if (!hasFamily) ...[
+          const SizedBox(height: 16),
+          AppCard(
+            color: AppColors.bannerBlue,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Set up your family vault', style: bodyStyle(weight: FontWeight.w800, size: 16)),
+                const SizedBox(height: 6),
+                Text(
+                  'Invite family later. Start with your own secure space on the Free plan.',
+                  style: bodyStyle(size: 13, color: AppColors.grey),
+                ),
+                const SizedBox(height: 12),
+                PrimaryButton(
+                  label: 'Create family',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const CreateFamilyScreen(asOnboarding: false)),
+                    ).then((_) => _load());
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+        const SizedBox(height: 22),
+        _sectionHeader(
+          'Your Family Vault',
+          'View All >',
+          () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VaultScreen())),
+        ),
+        const SizedBox(height: 10),
+        AppCard(
+          padding: const EdgeInsets.fromLTRB(6, 16, 6, 14),
           child: Row(
             children: [
-              _navyStat(Icons.description_outlined, '${d['documents_active'] ?? 0}', 'Documents'),
-              _navyStat(Icons.groups_outlined, '${d['family_member_count'] ?? 0}', 'Family'),
-              _navyStat(
-                Icons.cloud_outlined,
-                bytesLabel(usage['storage_used_bytes'] ?? 0),
-                'Storage used',
-              ),
+              _vaultStat(Icons.description_outlined, AppColors.sky, '${summary['documents'] ?? d['documents_active'] ?? 0}', 'Documents', () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const VaultScreen()));
+              }),
+              _vaultStat(Icons.people_outline, AppColors.emerald, '${summary['family_members'] ?? d['family_member_count'] ?? 0}', 'Family Members', () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const FamilyScreen()));
+              }),
+              _vaultStat(Icons.verified_user_outlined, AppColors.orange, '${summary['secure_items'] ?? 0}', 'Secure Items', () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const VaultScreen()));
+              }),
+              _vaultStat(Icons.schedule, AppColors.purple, '${summary['pending_actions'] ?? 0}', 'Pending Actions', () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const RemindersScreen()));
+              }),
             ],
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 22),
+        _sectionHeader(
+          'Quick Access',
+          'Customize',
+          () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Home tiles follow your family plan. Custom order is coming next.')),
+            );
+          },
+          trailingIcon: Icons.tune,
+        ),
+        const SizedBox(height: 10),
         GridView.count(
-          crossAxisCount: 3,
+          crossAxisCount: 2,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
-          childAspectRatio: 0.95,
+          childAspectRatio: 2.4,
           children: [
-            _tile(Icons.lock_outline, 'Vault', () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const VaultScreen()));
-            }),
-            _tile(Icons.people_outline, 'Family', () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const FamilyScreen()));
-            }),
-            _tile(Icons.workspace_premium_outlined, 'Plan', () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionScreen()));
-            }),
-            _tile(Icons.medical_services_outlined, 'Medical', () => _openCategory('Medical')),
-            _tile(Icons.shield_outlined, 'Insurance', () => _openCategory('Insurance')),
-            _tile(Icons.more_horiz, 'More', () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const VaultScreen()));
-            }),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Row(
-          children: [
-            Text('Notifications & Reminders', style: bodyStyle(weight: FontWeight.w700, size: 16)),
-            const Spacer(),
-            TextButton(
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const RemindersScreen()));
-              },
-              child: const Text('View all'),
+            ...visible.map((module) => _quickTile(
+                  moduleIcon('${module['module_key']}'),
+                  moduleTint('${module['module_key']}'),
+                  '${module['title']}',
+                  () => openModule(context, module),
+                  enabled: module['enabled'] != false,
+                )),
+            _quickTile(
+              Icons.apps,
+              AppColors.grey,
+              'More',
+              () => openMoreModules(context, extras.isEmpty ? visible : extras),
             ),
           ],
         ),
-        if (_reminders.isEmpty)
-          AppCard(child: Text('No upcoming reminders', style: bodyStyle(color: AppColors.grey)))
+        const SizedBox(height: 22),
+        _sectionHeader(
+          'Recent Activity',
+          'View All >',
+          () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivityScreen())),
+        ),
+        const SizedBox(height: 8),
+        if (activity.isEmpty)
+          AppCard(
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: AppColors.bannerBlue,
+                  child: Icon(Icons.history, color: AppColors.sky),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    hasFamily
+                        ? 'No activity yet. Upload a document or invite a family member to get started.'
+                        : 'Activity will appear here after you create a family and add your first document.',
+                    style: bodyStyle(size: 13, color: AppColors.grey),
+                  ),
+                ),
+              ],
+            ),
+          )
         else
-          ..._reminders.take(3).map((r) {
-            final map = r as Map;
+          ...activity.take(3).map((raw) {
+            final item = raw as Map;
+            final color = _activityColor('${item['color_key']}');
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: AppCard(
-                child: Row(
-                  children: [
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFE8E8),
-                        borderRadius: BorderRadius.circular(21),
-                      ),
-                      child: const Icon(Icons.warning_amber, color: AppColors.error),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('${map['title']}', style: bodyStyle(weight: FontWeight.w700)),
-                          Text('${map['reminder_date'] ?? ''}', style: bodyStyle(size: 12, color: AppColors.error)),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFE8E8),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text('Urgent', style: bodyStyle(size: 11, color: AppColors.error, weight: FontWeight.w700)),
-                    ),
-                  ],
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    backgroundColor: color.withValues(alpha: 0.12),
+                    child: Icon(_activityIcon('${item['icon_key']}'), color: color),
+                  ),
+                  title: Text('${item['title']}', style: bodyStyle(weight: FontWeight.w600)),
+                  subtitle: Text(relativeTime(item['created_at']), style: bodyStyle(size: 12, color: AppColors.grey)),
+                  trailing: const Icon(Icons.chevron_right, color: AppColors.grey),
+                  onTap: () {
+                    final ref = '${item['entity_reference_number'] ?? ''}';
+                    if ('${item['entity_type']}' == 'DOCUMENT' && ref.isNotEmpty) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => DocumentDetailScreen(documentRef: ref)),
+                      );
+                      return;
+                    }
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivityScreen()));
+                  },
                 ),
               ),
             );
           }),
-        const SizedBox(height: 8),
-        Text('Categories', style: bodyStyle(weight: FontWeight.w700, size: 16)),
-        const SizedBox(height: 10),
-        if (filtered.isEmpty)
-          const EmptyState(message: 'No categories yet')
-        else
-          ...filtered.map((cat) {
-            final map = cat as Map;
-            return ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const CircleAvatar(
-                backgroundColor: AppColors.navy,
-                child: Icon(Icons.folder_outlined, color: AppColors.gold),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.bannerBlue,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                child: const Icon(Icons.verified_user_outlined, color: AppColors.sky),
               ),
-              title: Text('${map['document_name']}', style: bodyStyle(weight: FontWeight.w600)),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CategoryDocumentsScreen(
-                      categoryRef: '${map['document_category_reference_number']}',
-                      categoryName: '${map['document_name']}',
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Your Legacy. Our Priority.', style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.navy)),
+                    const SizedBox(height: 2),
+                    Text(
+                      "We ensure your family's important information remains secure for generations.",
+                      style: GoogleFonts.inter(fontSize: 12, color: AppColors.grey, height: 1.3),
                     ),
-                  ),
-                );
-              },
-            );
-          }),
-        const SizedBox(height: 12),
-        PrimaryButton(
-          label: 'Upload Document',
-          onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const UploadDocumentScreen()));
-          },
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionScreen()));
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.navy,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: Text('Learn More', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  void _openCategory(String name) {
-    for (final cat in _categories) {
-      final map = cat as Map;
-      if ('${map['document_name']}'.toLowerCase().contains(name.toLowerCase())) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => CategoryDocumentsScreen(
-              categoryRef: '${map['document_category_reference_number']}',
-              categoryName: '${map['document_name']}',
-            ),
+  Widget _sectionHeader(String title, String action, VoidCallback onTap, {IconData? trailingIcon}) {
+    return Row(
+      children: [
+        Text(title, style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 17, color: AppColors.navy)),
+        const Spacer(),
+        InkWell(
+          onTap: onTap,
+          child: Row(
+            children: [
+              if (trailingIcon != null) ...[
+                Icon(trailingIcon, size: 15, color: AppColors.sky),
+                const SizedBox(width: 4),
+              ],
+              Text(action, style: GoogleFonts.inter(color: AppColors.sky, fontWeight: FontWeight.w700, fontSize: 13)),
+            ],
           ),
-        );
-        return;
-      }
-    }
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const VaultScreen()));
-  }
-
-  Widget _navyStat(IconData icon, String value, String label) {
-    return Expanded(
-      child: Column(
-        children: [
-          Icon(icon, color: AppColors.gold),
-          const SizedBox(height: 8),
-          Text(value, style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
-          Text(label, style: GoogleFonts.inter(color: Colors.white70, fontSize: 11)),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _tile(IconData icon, String label, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: AppCard(
+  Widget _vaultStat(IconData icon, Color color, String value, String label, VoidCallback onTap) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: AppColors.navy, size: 28),
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.14), shape: BoxShape.circle),
+              child: Icon(icon, color: color, size: 22),
+            ),
             const SizedBox(height: 8),
-            Text(label, style: bodyStyle(size: 12, weight: FontWeight.w600)),
+            Text(value, style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.navy)),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(fontSize: 10, color: AppColors.grey, fontWeight: FontWeight.w500, height: 1.15),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _quickTile(IconData icon, Color color, String label, VoidCallback onTap, {bool enabled = true}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Opacity(
+        opacity: enabled ? 1 : 0.5,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.navy.withValues(alpha: 0.06),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.navy)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String? _currentFamilyRef() {
+    final current = ApiService.instance.session.familyReferenceNumber;
+    final refs = _families.map((f) => '${(f as Map)['family_reference_number']}').toList();
+    if (current != null && refs.contains(current)) return current;
+    return refs.isEmpty ? null : refs.first;
+  }
+
+  Color _activityColor(String key) {
+    switch (key) {
+      case 'green':
+        return AppColors.emerald;
+      case 'orange':
+        return AppColors.orange;
+      case 'purple':
+        return AppColors.purple;
+      default:
+        return AppColors.sky;
+    }
+  }
+
+  IconData _activityIcon(String key) {
+    switch (key) {
+      case 'people':
+        return Icons.people_outline;
+      case 'shield':
+        return Icons.health_and_safety_outlined;
+      default:
+        return Icons.description_outlined;
+    }
   }
 }

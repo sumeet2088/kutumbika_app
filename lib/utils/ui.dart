@@ -322,15 +322,54 @@ InputDecoration fieldDecoration({String? hint, IconData? prefix, String? label})
   );
 }
 
+class AppChromeScope extends InheritedWidget {
+  const AppChromeScope({
+    super.key,
+    required this.unread,
+    required super.child,
+  });
+
+  final int unread;
+
+  static AppChromeScope? maybeOf(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<AppChromeScope>();
+  }
+
+  static bool embedded(BuildContext context) => maybeOf(context) != null;
+
+  @override
+  bool updateShouldNotify(AppChromeScope oldWidget) => unread != oldWidget.unread;
+}
+
 PreferredSizeWidget navyAppBar(String title, {List<Widget>? actions, bool implyLeading = true}) {
   return AppBar(
-    title: Text(title, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-    backgroundColor: AppColors.navy,
-    foregroundColor: AppColors.white,
+    title: Text(title, style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 18)),
+    backgroundColor: AppColors.white,
+    foregroundColor: AppColors.navy,
     elevation: 0,
+    scrolledUnderElevation: 0,
     automaticallyImplyLeading: implyLeading,
     actions: actions,
   );
+}
+
+String displayFirstName(Map<String, dynamic>? user) {
+  final first = '${user?['first_name'] ?? ''}'.trim();
+  if (first.isNotEmpty) return first;
+  return displayName(user);
+}
+
+String relativeTime(dynamic raw) {
+  if (raw == null || '$raw'.isEmpty) return '';
+  final dt = DateTime.tryParse('$raw');
+  if (dt == null) return '$raw';
+  final diff = DateTime.now().difference(dt.toLocal());
+  if (diff.inMinutes < 1) return 'Just now';
+  if (diff.inHours < 1) return '${diff.inMinutes} min ago';
+  if (diff.inHours < 24) return '${diff.inHours} hour${diff.inHours == 1 ? '' : 's'} ago';
+  if (diff.inDays == 1) return 'Yesterday';
+  if (diff.inDays < 7) return '${diff.inDays} days ago';
+  return '${dt.day}/${dt.month}/${dt.year}';
 }
 
 String displayName(Map<String, dynamic>? user) {

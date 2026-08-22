@@ -59,6 +59,14 @@ class AppConstants {
       '$apiPrefix/family/$familyRef';
   static String familyPhotoEndpoint(String familyRef) =>
       '$apiPrefix/family/$familyRef/photo';
+  static String get familyMineEndpoint => '$apiPrefix/family/mine';
+
+  static String get vehiclesEndpoint => '$apiPrefix/vehicles/';
+  static String vehicleUpdateEndpoint(String ref) =>
+      '$apiPrefix/vehicles/$ref/update';
+  static String get insuranceEndpoint => '$apiPrefix/insurance/';
+  static String insuranceUpdateEndpoint(String ref) =>
+      '$apiPrefix/insurance/$ref/update';
 
   static String get categoriesEndpoint => '$apiPrefix/document/categories/';
   static String get documentsEndpoint => '$apiPrefix/documents/';
@@ -100,6 +108,7 @@ class AppConstants {
       '$apiPrefix/notifications/$id/read';
 
   static String get dashboardEndpoint => '$apiPrefix/dashboard/';
+  static String get searchEndpoint => '$apiPrefix/search/';
   static String get subscriptionEndpoint => '$apiPrefix/subscription/';
   static String get subscriptionCancelEndpoint => '$apiPrefix/subscription/cancel';
   static String get subscriptionRenewEndpoint => '$apiPrefix/subscription/renew';

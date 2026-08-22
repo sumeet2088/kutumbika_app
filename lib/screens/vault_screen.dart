@@ -40,7 +40,7 @@ class _VaultScreenState extends State<VaultScreen> {
       final results = await Future.wait([
         api.listDocuments(familyRef: api.session.familyReferenceNumber),
         api.listCategories(),
-        api.getSubscription(),
+        api.getSubscription(familyRef: api.session.familyReferenceNumber),
       ]);
       setState(() {
         _docs = (results[0]['documents'] as List?) ?? [];
@@ -78,7 +78,6 @@ class _VaultScreenState extends State<VaultScreen> {
       backgroundColor: AppColors.cream,
       appBar: navyAppBar(
         'My Vault',
-        implyLeading: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_outline),
@@ -89,7 +88,9 @@ class _VaultScreenState extends State<VaultScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: AppChromeScope.embedded(context)
+          ? null
+          : FloatingActionButton(
         backgroundColor: AppColors.navy,
         onPressed: () {
           if (!canUpload) {

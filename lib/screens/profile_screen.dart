@@ -35,7 +35,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final results = await Future.wait([
         ApiService.instance.getUserDetails(),
-        ApiService.instance.getSubscription(),
+        ApiService.instance.getSubscription(
+          familyRef: ApiService.instance.session.familyReferenceNumber,
+        ),
       ]);
       setState(() {
         _user = results[0];
@@ -62,12 +64,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final plan = (_sub?['plan'] as Map?) ?? {};
     return Scaffold(
       backgroundColor: AppColors.cream,
-      appBar: navyAppBar('Profile', implyLeading: false),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
           : ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
               children: [
+                Text('Profile', style: headingStyle(size: 22)),
+                const SizedBox(height: 16),
                 Center(
                   child: CircleAvatar(
                     radius: 40,

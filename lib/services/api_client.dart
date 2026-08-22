@@ -71,8 +71,9 @@ class ApiClient {
     String path, {
     AuthMode auth = AuthMode.user,
     Map<String, dynamic>? body,
+    Map<String, String>? query,
   }) {
-    return _json('POST', path, auth: auth, body: body);
+    return _json('POST', path, auth: auth, body: body, query: query);
   }
 
   Future<Map<String, dynamic>> postMultipart(

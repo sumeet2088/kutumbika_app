@@ -26,7 +26,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
-      final data = await ApiService.instance.getSubscription();
+      final data = await ApiService.instance.getSubscription(
+        familyRef: ApiService.instance.session.familyReferenceNumber,
+      );
       setState(() {
         _sub = data;
         _loading = false;

@@ -17,6 +17,9 @@ class AppColors {
   static const Color teal = Color(0xFF1B7A6A);
   static const Color orange = Color(0xFFE07A3D);
   static const Color purple = Color(0xFF6B5B95);
+  static const Color sky = Color(0xFF2F6FED);
+  static const Color emerald = Color(0xFF2E9B6A);
+  static const Color bannerBlue = Color(0xFFE8F1FF);
 
   // Back-compat aliases used by older screens.
   static const Color logoBlack = navy;
